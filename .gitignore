@@ -1,8 +1,0 @@
-.idea
-.vscode
-
-# Mac
-.DS_Store
-
-# CMake
-cmake*

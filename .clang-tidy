@@ -1,4 +1,0 @@
----
-Checks:          'clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,-modernize-use-trailing-return-type,-google-*'
-WarningsAsErrors: 'true'
-FormatStyle: google

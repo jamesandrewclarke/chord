@@ -27,6 +27,8 @@ func (n *Node) Join(p *Node) {
 	n.Successor = p.FindSuccessor(n.Id)
 }
 
+// Stabilize updates the node's successor and informs them.
+// Should be run at a sensible regular interval.
 func (n *Node) Stabilize() {
 	x := n.Successor.Predecessor
 	if x != nil && between(x.Id, n.Id, n.Successor.Id) {

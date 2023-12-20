@@ -1,17 +1,31 @@
 package chord
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+type Id int
 
 type Node struct {
-	Id          int
+	Id          Id
 	Successor   *Node
 	Predecessor *Node
 }
 
+// TODO use a generic instead of 'int' so we can change it later for a different type
+type node interface {
+	Id() int
+	Successor() int
+	Predecessor() int
+	FindSuccessor(int) node
+	Notify(node)
+}
+
 // CreateNode initialises a single-node Chord ring
-func CreateNode(ID int) *Node {
+func CreateNode(Id Id) *Node {
 	n := &Node{
-		Id:          ID,
+		Id:          Id,
 		Predecessor: nil,
 		Successor:   nil,
 	}
@@ -19,6 +33,16 @@ func CreateNode(ID int) *Node {
 	n.Successor = n
 
 	return n
+}
+
+func (n *Node) Start() {
+	go func() {
+		for {
+			n.Stabilize()
+			fmt.Println(n)
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
 }
 
 // Join joins a Chord ring containing the node p
@@ -32,7 +56,6 @@ func (n *Node) Join(p *Node) {
 func (n *Node) Stabilize() {
 	x := n.Successor.Predecessor
 	if x != nil && between(x.Id, n.Id, n.Successor.Id) {
-		fmt.Println("updating")
 		n.Successor = x
 	}
 
@@ -48,7 +71,7 @@ func (n *Node) Notify(p *Node) {
 }
 
 // FindSuccessor returns the node succeeding a given ID
-func (n *Node) FindSuccessor(Id int) *Node {
+func (n *Node) FindSuccessor(Id Id) *Node {
 	if n == n.Successor {
 		return n
 	}
@@ -62,17 +85,17 @@ func (n *Node) FindSuccessor(Id int) *Node {
 }
 
 func (n *Node) String() string {
-	predecessor := -1
+	var predecessor Id = -1
 	if n.Predecessor != nil {
 		predecessor = n.Predecessor.Id
 	}
-	successor := -1
+	var successor Id = -1
 	successor = n.Successor.Id
 	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Id, predecessor, successor)
 }
 
 // For handling circular intervals
-func between(id, start, end int) bool {
+func between(id, start, end Id) bool {
 	if start < end {
 		return id > start && id < end
 	}
@@ -80,7 +103,7 @@ func between(id, start, end int) bool {
 	return id > start || id < end
 }
 
-func betweenIncStart(id, start, end int) bool {
+func betweenIncStart(id, start, end Id) bool {
 	if start < end {
 		return id >= start && id < end
 	}

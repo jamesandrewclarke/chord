@@ -2,18 +2,19 @@ package main
 
 import (
 	"chord/chord"
-	"fmt"
 )
 
 func main() {
-	N1 := chord.CreateNode(1)
-	N10 := chord.CreateNode(10)
+	lead := chord.CreateNode(1)
+	lead.Start()
 
-	N10.Join(N1)
+	s := make([]*chord.Node, 10)
+	for i := 1; i < 10; i++ {
+		s[i] = chord.CreateNode(chord.Id(i) + 1)
+		s[i].Join(lead)
+		s[i].Start()
+	}
 
-	N10.Stabilize()
-	N1.Stabilize()
-
-	fmt.Println(N1)
-	fmt.Println(N10)
+	for {
+	}
 }

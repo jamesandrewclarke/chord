@@ -7,10 +7,15 @@ import (
 
 type Id int
 
+const m = 64
+
 type Node struct {
 	Id          Id
 	Successor   *Node
 	Predecessor *Node
+	Finger      [m]*Node
+
+	nextFinger int
 }
 
 // TODO use a generic instead of 'int' so we can change it later for a different type
@@ -31,6 +36,7 @@ func CreateNode(Id Id) *Node {
 	}
 
 	n.Successor = n
+	n.nextFinger = 1
 
 	return n
 }
@@ -38,7 +44,8 @@ func CreateNode(Id Id) *Node {
 func (n *Node) Start() {
 	go func() {
 		for {
-			n.Stabilize()
+			n.stabilize()
+			// n.fixFingers()
 			fmt.Println(n)
 			time.Sleep(500 * time.Millisecond)
 		}
@@ -53,13 +60,22 @@ func (n *Node) Join(p *Node) {
 
 // Stabilize updates the node's successor and informs them.
 // Should be run at a sensible regular interval.
-func (n *Node) Stabilize() {
+func (n *Node) stabilize() {
 	x := n.Successor.Predecessor
 	if x != nil && between(x.Id, n.Id, n.Successor.Id) {
 		n.Successor = x
 	}
 
 	n.Successor.Notify(n)
+}
+
+func (n *Node) fixFingers() {
+	if n.nextFinger >= m {
+		n.nextFinger = 1
+	}
+
+	n.Finger[n.nextFinger] = n.FindSuccessor(n.Id + 1<<(n.nextFinger-1))
+	n.nextFinger++
 }
 
 // Notify is called when Node p thinks it is our predecessor
@@ -70,8 +86,8 @@ func (n *Node) Notify(p *Node) {
 	}
 }
 
-// FindSuccessor returns the node succeeding a given ID
-func (n *Node) FindSuccessor(Id Id) *Node {
+// FindSuccessorIterative returns the node succeeding a given ID without the finger table
+func (n *Node) FindSuccessorIterative(Id Id) *Node {
 	if n == n.Successor {
 		return n
 	}
@@ -80,8 +96,31 @@ func (n *Node) FindSuccessor(Id Id) *Node {
 		return n.Successor
 	} else {
 		// Just forward the query around the circle until we find it
-		return n.Successor.FindSuccessor(Id)
+		return n.Successor.FindSuccessorIterative(Id)
 	}
+}
+
+func (n *Node) FindSuccessor(Id Id) *Node {
+	if between(Id, n.Id, n.Successor.Id) {
+		return n.Successor
+	}
+
+	p := n.ClosestPrecedingNode(Id)
+	if p == n {
+		return n
+	}
+
+	return p.FindSuccessor(Id)
+}
+
+func (n *Node) ClosestPrecedingNode(Id Id) *Node {
+	for i := m - 1; i >= 0; i-- {
+		if n.Finger[i] != nil && between(n.Finger[i].Id, n.Id, Id) {
+			return n.Finger[i]
+		}
+	}
+
+	return n
 }
 
 func (n *Node) String() string {

@@ -10,63 +10,82 @@ type Id int
 const m = 64
 
 type Node struct {
-	Id          Id
-	Successor   *Node
-	Predecessor *Node
-	Finger      [m]*Node
+	id Id
+
+	successor   node
+	predecessor node
+	finger      [m]node
 
 	nextFinger int
 }
 
 // TODO use a generic instead of 'int' so we can change it later for a different type
 type node interface {
-	Id() int
-	Successor() int
-	Predecessor() int
-	FindSuccessor(int) node
+	Identifier() Id
+	Successor() node
+	Predecessor() node
+	FindSuccessor(Id) node
 	Notify(node)
 }
 
 // CreateNode initialises a single-node Chord ring
 func CreateNode(Id Id) *Node {
 	n := &Node{
-		Id:          Id,
-		Predecessor: nil,
-		Successor:   nil,
+		id:          Id,
+		predecessor: nil,
+		successor:   nil,
 	}
 
-	n.Successor = n
+	n.successor = n
 	n.nextFinger = 1
 
 	return n
+}
+
+func (n *Node) Identifier() Id {
+	return n.id
+}
+
+func (n *Node) Predecessor() node {
+	return n.predecessor
+}
+
+func (n *Node) Successor() node {
+	return n.successor
 }
 
 func (n *Node) Start() {
 	go func() {
 		for {
 			n.stabilize()
-			// n.fixFingers()
+			n.fixFingers()
+			time.Sleep(250 * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		for {
 			fmt.Println(n)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 }
 
 // Join joins a Chord ring containing the node p
 func (n *Node) Join(p *Node) {
-	n.Predecessor = nil
-	n.Successor = p.FindSuccessor(n.Id)
+	n.predecessor = nil
+	n.successor = p.FindSuccessor(n.Identifier())
 }
 
 // Stabilize updates the node's successor and informs them.
 // Should be run at a sensible regular interval.
 func (n *Node) stabilize() {
-	x := n.Successor.Predecessor
-	if x != nil && between(x.Id, n.Id, n.Successor.Id) {
-		n.Successor = x
+	x := n.Successor().Predecessor()
+	if x != nil && between(x.Identifier(), n.Identifier(), n.Successor().Identifier()) {
+		n.successor = x
 	}
 
-	n.Successor.Notify(n)
+	n.Successor().Notify(n)
 }
 
 func (n *Node) fixFingers() {
@@ -74,38 +93,24 @@ func (n *Node) fixFingers() {
 		n.nextFinger = 1
 	}
 
-	n.Finger[n.nextFinger] = n.FindSuccessor(n.Id + 1<<(n.nextFinger-1))
+	n.finger[n.nextFinger] = n.FindSuccessor(n.id + 1<<(n.nextFinger-1))
 	n.nextFinger++
 }
 
 // Notify is called when Node p thinks it is our predecessor
-func (n *Node) Notify(p *Node) {
+func (n *Node) Notify(p node) {
 	// If p is between our current predecessor and us, update it
-	if n.Predecessor == nil || between(p.Id, n.Predecessor.Id, n.Id) {
-		n.Predecessor = p
+	if n.Predecessor() == nil || between(p.Identifier(), n.Predecessor().Identifier(), n.Identifier()) {
+		n.predecessor = p
 	}
 }
 
-// FindSuccessorIterative returns the node succeeding a given ID without the finger table
-func (n *Node) FindSuccessorIterative(Id Id) *Node {
-	if n == n.Successor {
-		return n
+func (n *Node) FindSuccessor(Id Id) node {
+	if between(Id, n.Identifier(), n.Successor().Identifier()) {
+		return n.Successor()
 	}
 
-	if betweenIncStart(Id, n.Id, n.Successor.Id) {
-		return n.Successor
-	} else {
-		// Just forward the query around the circle until we find it
-		return n.Successor.FindSuccessorIterative(Id)
-	}
-}
-
-func (n *Node) FindSuccessor(Id Id) *Node {
-	if between(Id, n.Id, n.Successor.Id) {
-		return n.Successor
-	}
-
-	p := n.ClosestPrecedingNode(Id)
+	p := n.closestPrecedingNode(Id)
 	if p == n {
 		return n
 	}
@@ -113,10 +118,10 @@ func (n *Node) FindSuccessor(Id Id) *Node {
 	return p.FindSuccessor(Id)
 }
 
-func (n *Node) ClosestPrecedingNode(Id Id) *Node {
+func (n *Node) closestPrecedingNode(Id Id) node {
 	for i := m - 1; i >= 0; i-- {
-		if n.Finger[i] != nil && between(n.Finger[i].Id, n.Id, Id) {
-			return n.Finger[i]
+		if n.finger[i] != nil && between(n.finger[i].Identifier(), n.Identifier(), Id) {
+			return n.finger[i]
 		}
 	}
 
@@ -125,12 +130,12 @@ func (n *Node) ClosestPrecedingNode(Id Id) *Node {
 
 func (n *Node) String() string {
 	var predecessor Id = -1
-	if n.Predecessor != nil {
-		predecessor = n.Predecessor.Id
+	if n.Predecessor() != nil {
+		predecessor = n.Predecessor().Identifier()
 	}
-	var successor Id = -1
-	successor = n.Successor.Id
-	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Id, predecessor, successor)
+
+	successor := n.Successor().Identifier()
+	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, successor)
 }
 
 // For handling circular intervals
@@ -142,10 +147,6 @@ func between(id, start, end Id) bool {
 	return id > start || id < end
 }
 
-func betweenIncStart(id, start, end Id) bool {
-	if start < end {
-		return id >= start && id < end
-	}
-
-	return id >= start || id < end
+func IdBetween(id Id, a, b node) bool {
+	return between(a.Identifier(), b.Identifier(), id)
 }

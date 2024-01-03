@@ -93,7 +93,8 @@ func (n *Node) fixFingers() {
 		n.nextFinger = 1
 	}
 
-	n.finger[n.nextFinger] = n.FindSuccessor(n.id + 1<<(n.nextFinger-1))
+	n.finger[n.nextFinger] = n.FindSuccessor(n.id + 1<<(n.nextFinger-1)) // TODO fix this to wrap around to the start of the circle
+	// should do tests to verify this
 	n.nextFinger++
 }
 

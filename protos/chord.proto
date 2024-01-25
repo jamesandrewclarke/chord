@@ -8,7 +8,7 @@ service Chord {
     rpc GetPredecessor(PredecessorRequest) returns (Node);
     rpc GetSuccessor(SuccessorRequest) returns (Node);
     rpc FindSuccessor(FindSuccessorRequest) returns (Node);
-    rpc Notify(NotifyRequest) returns (Node);
+    rpc Notify(Node) returns (NotifyResponse);
     rpc Hello(HelloRequest) returns (HelloResponse);
     rpc Lookup(LookupRequest) returns (LookupResponse);
 }
@@ -16,9 +16,10 @@ service Chord {
 // Empty placeholders in case we need to add parameters in the future
 message PredecessorRequest {}
 message SuccessorRequest {}
-message FindSuccessorRequest{}
-message NotifyRequest {}
+message FindSuccessorRequest {}
 message HelloRequest {}
+
+message NotifyResponse {}
 
 message LookupRequest {
     string key = 1;
@@ -29,8 +30,8 @@ message LookupResponse {
 }
 
 message Node {
-    fixed32 ipv4 = 1;
-    string identifier = 2;
+    string address = 1;
+    bytes identifier = 2;
 }
 
 message HelloResponse {

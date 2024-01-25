@@ -3,7 +3,6 @@ package chord
 import (
 	chord_proto "chord/protos"
 	"context"
-	"log"
 	"time"
 
 	"google.golang.org/grpc"
@@ -30,10 +29,10 @@ func (n *RPCNode) Identifier() Id {
 	return n.Id
 }
 
-func (n *RPCNode) Predecessor() node {
+func (n *RPCNode) Predecessor() (node, error) {
 	chord_client, err := n.getConnection()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -41,18 +40,18 @@ func (n *RPCNode) Predecessor() node {
 
 	p, err := chord_client.GetPredecessor(ctx, &chord_proto.PredecessorRequest{})
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	return &RPCNode{
 		Address: p.Address,
-	}
+	}, nil
 }
 
-func (n *RPCNode) Successor() node {
+func (n *RPCNode) Successor() (node, error) {
 	chord_client, err := n.getConnection()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -60,19 +59,18 @@ func (n *RPCNode) Successor() node {
 
 	p, err := chord_client.GetSuccessor(ctx, &chord_proto.SuccessorRequest{})
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	return &RPCNode{
 		Address: p.Address,
-	}
+	}, nil
 }
 
-func (n *RPCNode) FindSuccessor(Id) node {
+func (n *RPCNode) FindSuccessor(Id) (node, error) {
 	chord_client, err := n.getConnection()
 	if err != nil {
-		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -80,27 +78,33 @@ func (n *RPCNode) FindSuccessor(Id) node {
 
 	p, err := chord_client.FindSuccessor(ctx, &chord_proto.FindSuccessorRequest{})
 	if err != nil {
-		log.Println(err)
-		return nil
+		return nil, err
 	}
 
 	return &RPCNode{
 		Address: p.Address,
-	}
+	}, nil
 }
 
-func (n *RPCNode) Notify(node) {
-	chord_client, _ := n.getConnection()
+func (n *RPCNode) Notify(node) error {
+	chord_client, err := n.getConnection()
+	if err != nil {
+		return err
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	_, _ = chord_client.Notify(ctx, &chord_proto.Node{
-		Address:    "", // get address
+	_, err = chord_client.Notify(ctx, &chord_proto.Node{
+		Address:    "127.0.0.1", // get address
 		Identifier: idToBytes(n.Identifier()),
 	})
 
-	// TODO error handling
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func idToBytes(id Id) []byte {

@@ -72,7 +72,7 @@ func (n *Node) Start() {
 }
 
 // Join joins a Chord ring containing the node p
-func (n *Node) Join(p *Node) {
+func (n *Node) Join(p node) {
 	n.predecessor = nil
 	n.successor = p.FindSuccessor(n.Identifier())
 }

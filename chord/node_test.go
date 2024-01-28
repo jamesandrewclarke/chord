@@ -99,3 +99,21 @@ func TestStabilizeSetsSuccessor(t *testing.T) {
 
 	assert.Equal(t, a.Identifier(), b.predecessor.Identifier(), "The successor's predecessor should be set after stabilizing")
 }
+
+func TestStabilizeNewSuccessor(t *testing.T) {
+	a := CreateNode(1)
+	b := CreateNode(2)
+	c := CreateNode(4)
+
+	a.Join(c)
+	a.stabilize()
+
+	b.Join(c)
+	b.stabilize()
+
+	assert.Equal(t, c.Identifier(), a.successor.Identifier(), "A's successor should still be C")
+
+	// Another round of stabilization after b has joined
+	a.stabilize()
+	assert.Equal(t, b.Identifier(), a.successor.Identifier(), "A's successor should be B, not C")
+}

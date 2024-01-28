@@ -129,7 +129,7 @@ func (n *Node) Notify(p node) error {
 
 func (n *Node) FindSuccessor(Id Id) (node, error) {
 	succ, _ := n.Successor()
-	if between(Id, n.Identifier(), succ.Identifier()) {
+	if between(Id, n.Identifier(), succ.Identifier()+1) {
 		return succ, nil
 	}
 

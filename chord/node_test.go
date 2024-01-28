@@ -12,6 +12,47 @@ func TestSingletonNodeIsOwnSuccessor(t *testing.T) {
 	assert.Equal(t, node.Identifier(), node.successor.Identifier(), "A new node should be its own successor")
 }
 
+func TestFindSuccessorSimple(t *testing.T) {
+	a := CreateNode(1)
+	b := CreateNode(10)
+
+	a.Join(b)
+
+	for i := a.Identifier() + 1; i <= b.Identifier(); i++ {
+		succ, err := a.FindSuccessor(Id(i))
+
+		assert.Nil(t, err)
+		assert.Equal(t, b.Identifier(), succ.Identifier())
+	}
+}
+
+func TestFindSuccessorWrapAround(t *testing.T) {
+	a := CreateNode(10)
+	b := CreateNode(1)
+
+	a.Join(b)
+
+	succ, _ := a.FindSuccessor(a.Identifier())
+	assert.Equal(t, a.Identifier(), succ.Identifier())
+
+	// Any key >10 should be handled by node b
+	for i := 1; i < 16; i++ {
+		succ, _ = a.FindSuccessor(a.Identifier() + 1)
+		assert.Equal(t, b.Identifier(), succ.Identifier())
+	}
+}
+
+func TestSingletonNodeFindSuccessorReturnsSelf(t *testing.T) {
+	node := CreateNode(1)
+
+	for i := 1; i < 100; i++ {
+		succ, err := node.FindSuccessor(node.Identifier())
+
+		assert.Nil(t, err)
+		assert.Equal(t, node.Identifier(), succ.Identifier())
+	}
+}
+
 func TestJoinSetsCorrectSuccessor(t *testing.T) {
 	a := CreateNode(1)
 	b := CreateNode(10)

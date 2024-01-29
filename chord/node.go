@@ -20,7 +20,6 @@ type Node struct {
 	nextFinger int
 }
 
-// TODO use a generic instead of 'int' so we can change it later for a different type
 type node interface {
 	Identifier() Id
 	Successor() (node, error)
@@ -43,20 +42,25 @@ func CreateNode(Id Id) *Node {
 	return n
 }
 
+// Identifier returns the m-bit identifier which determines the node's location on the ring
 func (n *Node) Identifier() Id {
 	return n.id
 }
 
+// Predecessor returns a pointer to n's predecessor
 func (n *Node) Predecessor() (node, error) {
 	return n.predecessor, nil
 }
 
+// Successor returns a pointer to n's successor
 func (n *Node) Successor() (node, error) {
 	return n.successor, nil
 }
 
+// Start starts the background tasks to stabilize n's pointers and lookup table
 func (n *Node) Start() {
 	go func() {
+		// TODO Configurable intervals for experiments
 		for {
 			n.stabilize()
 			n.fixFingers()
@@ -80,8 +84,13 @@ func (n *Node) Join(p node) {
 	n.setSuccessor(succ)
 }
 
+// setSuccessor is a safe wrapper method for setting n's immediate successor
 func (n *Node) setSuccessor(p node) {
 	n.successor = p
+
+	// Finger 0 is also the successor, and should be set every time
+
+	// TODO do we need separate locations
 	n.finger[0] = p
 }
 
@@ -105,19 +114,20 @@ func (n *Node) stabilize() {
 	}
 }
 
+// fixFingers updates the finger table, it is expected to be called repeatedly and updates
+// one finger at a time
 func (n *Node) fixFingers() {
 	if n.nextFinger >= m {
 		n.nextFinger = 1
 	}
 
-	succ, err := n.FindSuccessor(n.id + 1<<(n.nextFinger-1)) // TODO fix this to wrap around to the start of the circle
+	succ, err := n.FindSuccessor(n.id + 1<<(n.nextFinger-1))
 	if err != nil {
 		log.Printf("error fetching successor for finger %v", n.nextFinger)
 		return
 	}
 
 	n.finger[n.nextFinger] = succ
-	// should do tests to verify this
 	n.nextFinger++
 }
 
@@ -132,6 +142,8 @@ func (n *Node) Notify(p node) error {
 	return nil
 }
 
+// FindSuccessor returns the successor node for a given Id by recursively asking the highest
+// node in our finger table which comes precedes the given Id
 func (n *Node) FindSuccessor(Id Id) (node, error) {
 	succ, _ := n.Successor()
 	if between(Id, n.Identifier(), succ.Identifier()+1) {
@@ -146,6 +158,7 @@ func (n *Node) FindSuccessor(Id Id) (node, error) {
 	return p.FindSuccessor(Id)
 }
 
+// closestPrecedingNode returns the highest entry in the finger table which precedes Id
 func (n *Node) closestPrecedingNode(Id Id) node {
 	for i := m - 1; i >= 0; i-- {
 		if n.finger[i] != nil && between(n.finger[i].Identifier(), n.Identifier(), Id) {
@@ -156,6 +169,7 @@ func (n *Node) closestPrecedingNode(Id Id) node {
 	return n
 }
 
+// String returns a basic string representation of the node for debugging purposes
 func (n *Node) String() string {
 	var predecessor Id = -1
 

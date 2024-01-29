@@ -81,7 +81,8 @@ func TestFindSuccessorAdvanced(t *testing.T) {
 	}
 
 	// All keys after the last node should be handled by the first node
-	// TODO make this pass, if possible
+	// TODO make this pass, if possible. This may not be possible to pass without requiring stabilizing
+	// or fixFingers
 	for i := 1; i < 16; i++ {
 		// succ, _ := a.FindSuccessor(d.Identifier() + Id(i))
 		// assert.Equal(t, a.Identifier(), succ.Identifier())

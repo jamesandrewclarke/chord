@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Id int
+type Id int64
 
 const m = 64
 

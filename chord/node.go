@@ -37,7 +37,7 @@ func CreateNode(Id Id) *Node {
 		successor:   nil,
 	}
 
-	n.successor = n
+	n.setSuccessor(n)
 	n.nextFinger = 1
 
 	return n
@@ -77,7 +77,12 @@ func (n *Node) Join(p node) {
 	n.predecessor = nil
 
 	succ, _ := p.FindSuccessor(n.Identifier())
-	n.successor = succ
+	n.setSuccessor(succ)
+}
+
+func (n *Node) setSuccessor(p node) {
+	n.successor = p
+	n.finger[0] = p
 }
 
 // Stabilize updates the node's successor and informs them.
@@ -91,7 +96,7 @@ func (n *Node) stabilize() {
 	}
 
 	if succ_pred != nil && between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
-		n.successor = succ_pred
+		n.setSuccessor(succ_pred)
 	}
 
 	err = succ.Notify(n)

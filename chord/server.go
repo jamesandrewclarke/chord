@@ -8,7 +8,6 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/peer"
 )
 
 type server struct {
@@ -34,32 +33,69 @@ func StartServer(node node, port int) {
 func (s *server) GetPredecessor(ctx context.Context, in *chord_proto.PredecessorRequest) (*chord_proto.Node, error) {
 	log.Printf("received predecessor request")
 
-	return &chord_proto.Node{}, nil
+	p, err := s.local.Predecessor()
+	if err != nil {
+		return &chord_proto.Node{}, err
+	}
+
+	addr, err := getPeerAddress(p.Identifier())
+	if err != nil {
+		return &chord_proto.Node{}, err
+	}
+
+	return &chord_proto.Node{
+		Address:    addr,
+		Identifier: int64(p.Identifier()),
+	}, nil
 }
 
 func (s *server) GetSuccessor(ctx context.Context, in *chord_proto.SuccessorRequest) (*chord_proto.Node, error) {
 	log.Printf("received successor request")
 
-	return &chord_proto.Node{}, nil
+	p, err := s.local.Successor()
+	if err != nil {
+		return nil, err
+	}
+
+	addr, err := getPeerAddress(p.Identifier())
+	if err != nil {
+		return nil, err
+	}
+
+	return &chord_proto.Node{
+		Address:    addr,
+		Identifier: int64(p.Identifier()),
+	}, nil
 }
 
 func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccessorRequest) (*chord_proto.Node, error) {
 	log.Printf("received findsuccessor request")
 
-	return &chord_proto.Node{}, nil
+	lookupID := in.Id
+	p, err := s.local.FindSuccessor(Id(lookupID))
+	if err != nil {
+		return nil, err
+	}
+
+	foundID := p.Identifier()
+	addr, err := getPeerAddress(foundID)
+	if err != nil {
+		fmt.Printf("couldn't find peer address %v", err)
+		return nil, err
+	}
+
+	return &chord_proto.Node{
+		Identifier: int64(foundID),
+		Address:    addr,
+	}, nil
 }
 
 func (s *server) Notify(ctx context.Context, in *chord_proto.Node) (*chord_proto.NotifyResponse, error) {
-	log.Printf("received notify request")
-
-	// stub
-	// TODO actually update proto to be able to map an address to a node
-
-	p, _ := peer.FromContext(ctx)
+	log.Printf("received notify request from %v", in.Identifier)
 
 	node := &RPCNode{
-		Address: p.Addr.String(),
-		Id:      0,
+		Address: in.Address,
+		Id:      Id(in.Identifier),
 	}
 
 	s.local.Notify(node)

@@ -49,6 +49,9 @@ func (n *Node) Identifier() Id {
 
 // Predecessor returns a pointer to n's predecessor
 func (n *Node) Predecessor() (node, error) {
+	if n.predecessor == nil {
+		return nil, fmt.Errorf("no known predecessor")
+	}
 	return n.predecessor, nil
 }
 
@@ -64,24 +67,29 @@ func (n *Node) Start() {
 		for {
 			n.stabilize()
 			n.fixFingers()
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(2000 * time.Millisecond)
 		}
 	}()
 
 	go func() {
 		for {
 			fmt.Println(n)
-			time.Sleep(1 * time.Second)
+			time.Sleep(3 * time.Second)
 		}
 	}()
 }
 
 // Join joins a Chord ring containing the node p
-func (n *Node) Join(p node) {
+func (n *Node) Join(p node) error {
 	n.predecessor = nil
 
-	succ, _ := p.FindSuccessor(n.Identifier())
+	succ, err := p.FindSuccessor(n.Identifier())
+	if err != nil {
+		return err
+	}
 	n.setSuccessor(succ)
+
+	return nil
 }
 
 // setSuccessor is a safe wrapper method for setting n's immediate successor
@@ -98,17 +106,13 @@ func (n *Node) setSuccessor(p node) {
 // Should be run at a sensible regular interval.
 func (n *Node) stabilize() {
 	succ, _ := n.Successor()
-	succ_pred, err := succ.Predecessor()
-	if err != nil {
-		log.Printf("error during stabilization, %v", err)
-		return
-	}
+	succ_pred, _ := succ.Predecessor()
 
 	if succ_pred != nil && between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
 		n.setSuccessor(succ_pred)
 	}
 
-	err = succ.Notify(n)
+	err := succ.Notify(n)
 	if err != nil {
 		log.Printf("error notifying the successor %v", err)
 	}
@@ -124,6 +128,7 @@ func (n *Node) fixFingers() {
 	succ, err := n.FindSuccessor(n.id + 1<<(n.nextFinger-1))
 	if err != nil {
 		log.Printf("error fetching successor for finger %v", n.nextFinger)
+		n.nextFinger++
 		return
 	}
 

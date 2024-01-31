@@ -3,6 +3,7 @@ package chord
 import (
 	chord_proto "chord/protos"
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
@@ -19,6 +20,7 @@ type RPCNode struct {
 func (n *RPCNode) getConnection() (chord_proto.ChordClient, error) {
 	conn, err := grpc.Dial(n.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
+		fmt.Printf("error getting connection! %v", err)
 		return nil, err
 	}
 
@@ -44,6 +46,7 @@ func (n *RPCNode) Predecessor() (node, error) {
 	}
 
 	return &RPCNode{
+		Id:      Id(p.Identifier),
 		Address: p.Address,
 	}, nil
 }
@@ -63,11 +66,12 @@ func (n *RPCNode) Successor() (node, error) {
 	}
 
 	return &RPCNode{
+		Id:      Id(p.Identifier),
 		Address: p.Address,
 	}, nil
 }
 
-func (n *RPCNode) FindSuccessor(Id) (node, error) {
+func (n *RPCNode) FindSuccessor(id Id) (node, error) {
 	chord_client, err := n.getConnection()
 	if err != nil {
 		return nil, err
@@ -76,17 +80,20 @@ func (n *RPCNode) FindSuccessor(Id) (node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	p, err := chord_client.FindSuccessor(ctx, &chord_proto.FindSuccessorRequest{})
+	p, err := chord_client.FindSuccessor(ctx, &chord_proto.FindSuccessorRequest{
+		Id: int64(id),
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &RPCNode{
+		Id:      Id(p.Identifier),
 		Address: p.Address,
 	}, nil
 }
 
-func (n *RPCNode) Notify(node) error {
+func (n *RPCNode) Notify(p node) error {
 	chord_client, err := n.getConnection()
 	if err != nil {
 		return err
@@ -95,9 +102,14 @@ func (n *RPCNode) Notify(node) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
+	addr, err := getPeerAddress(p.Identifier())
+	if err != nil {
+		return err
+	}
+
 	_, err = chord_client.Notify(ctx, &chord_proto.Node{
-		Address:    "127.0.0.1", // get address
-		Identifier: idToBytes(n.Identifier()),
+		Address:    addr,
+		Identifier: int64(p.Identifier()),
 	})
 
 	if err != nil {
@@ -105,8 +117,4 @@ func (n *RPCNode) Notify(node) error {
 	}
 
 	return nil
-}
-
-func idToBytes(id Id) []byte {
-	return []byte{}
 }

@@ -15,10 +15,14 @@ service Chord {
 // Empty placeholders in case we need to add parameters in the future
 message PredecessorRequest {}
 message SuccessorRequest {}
-message FindSuccessorRequest {}
+
 message HelloRequest {}
 
 message NotifyResponse {}
+
+message FindSuccessorRequest {
+    int64 id = 1;
+}
 
 message LookupRequest {
     string key = 1;
@@ -30,5 +34,5 @@ message LookupResponse {
 
 message Node {
     string address = 1;
-    bytes identifier = 2;
+    int64 identifier = 2;
 }

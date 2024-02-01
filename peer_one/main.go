@@ -19,6 +19,7 @@ func main() {
 	chord.SetPeerAddress(4561, "localhost:8080")
 	chord.SetPeerAddress(58752, "localhost:8081")
 	chord.SetPeerAddress(239847, "localhost:8082")
+	chord.SetPeerAddress(2123, "localhost:8083")
 
 	remote := &chord.RPCNode{
 		Address: "localhost:8080",

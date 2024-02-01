@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	node := chord.CreateNode(239847)
+	node := chord.CreateNode(2123)
 
 	chord.SetPeerAddress(4561, "localhost:8080")
 	chord.SetPeerAddress(58752, "localhost:8081")
@@ -17,7 +17,7 @@ func main() {
 	chord.SetPeerAddress(2123, "localhost:8083")
 
 	go func() {
-		chord.StartServer(node, 8082)
+		chord.StartServer(node, 8083)
 	}()
 
 	remote := &chord.RPCNode{

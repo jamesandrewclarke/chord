@@ -6,7 +6,10 @@ import (
 )
 
 func main() {
-	n := 1024
+	lead := chord.CreateNode(0)
+	lead.Start()
+
+	n := 32
 	s := make([]*chord.Node, n)
 
 	s[0] = chord.CreateNode(0)
@@ -14,8 +17,8 @@ func main() {
 
 	for i := 1; i < n; i++ {
 		// s[i] = chord.CreateNode(chord.Id(1 << i))
-		s[i] = chord.CreateNode(chord.Id(i * 16))
-		s[i].Join(s[i-1])
+		s[i] = chord.CreateNode(chord.Id(i))
+		s[i].Join(lead)
 		s[i].Start()
 	}
 

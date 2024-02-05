@@ -13,9 +13,10 @@ const m = 64
 type Node struct {
 	id Id
 
-	successor   node
 	predecessor node
 	finger      [m]node
+
+	successorList SuccessorList
 
 	nextFinger int
 }
@@ -25,7 +26,9 @@ type node interface {
 	Successor() (node, error)
 	Predecessor() (node, error)
 	FindSuccessor(Id) (node, error)
-	Notify(node) error
+	Rectify(node) error
+	SuccessorList() (SuccessorList, error)
+	Alive() bool
 }
 
 // CreateNode initialises a single-node Chord ring
@@ -33,7 +36,6 @@ func CreateNode(Id Id) *Node {
 	n := &Node{
 		id:          Id,
 		predecessor: nil,
-		successor:   nil,
 	}
 
 	n.setSuccessor(n)
@@ -57,7 +59,7 @@ func (n *Node) Predecessor() (node, error) {
 
 // Successor returns a pointer to n's successor
 func (n *Node) Successor() (node, error) {
-	return n.successor, nil
+	return n.successorList.Head(), nil
 }
 
 // Start starts the background tasks to stabilize n's pointers and lookup table
@@ -65,9 +67,12 @@ func (n *Node) Start() {
 	go func() {
 		// TODO Configurable intervals for experiments
 		for {
-			n.stabilize()
+			err := n.stabilize()
+			if err != nil {
+				fmt.Printf("Error stabilizing on node %v: %v", n.Identifier(), err)
+			}
 			n.fixFingers()
-			time.Sleep(2000 * time.Millisecond)
+			time.Sleep(250 * time.Millisecond)
 		}
 	}()
 
@@ -94,28 +99,79 @@ func (n *Node) Join(p node) error {
 
 // setSuccessor is a safe wrapper method for setting n's immediate successor
 func (n *Node) setSuccessor(p node) {
-	n.successor = p
+	n.successorList.SetHead(p)
 
-	// Finger 0 is also the successor, and should be set every time
-
-	// TODO do we need separate locations
+	// TODO do we need separate locations?
 	n.finger[0] = p
 }
 
-// Stabilize updates the node's successor and informs them.
-// Should be run at a sensible regular interval.
-func (n *Node) stabilize() {
-	succ, _ := n.Successor()
-	succ_pred, _ := succ.Predecessor()
+// stabilize updates the successor list and informs the immediate successor of the node's presence
+func (n *Node) stabilize() error {
+	defer func() {
+		succ, _ := n.Successor()
+		if succ != nil {
+			succ.Rectify(n)
+		}
+	}()
 
-	if succ_pred != nil && between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
-		n.setSuccessor(succ_pred)
-	}
-
-	err := succ.Notify(n)
+	succ, err := n.Successor()
 	if err != nil {
-		log.Printf("error notifying the successor %v", err)
+		return fmt.Errorf("can't retrieve successor %v: %v", succ.Identifier(), err)
 	}
+
+	succ_pred, err := succ.Predecessor()
+	if err != nil {
+		return fmt.Errorf("can't retrieve successor %v's predecessor: %v", succ.Identifier(), err)
+	}
+
+	// Successor is live
+	// Adopt successor list
+	err = n.adoptSuccessorList(succ)
+	if err != nil {
+		return fmt.Errorf("can't adopt successor %v's list %v", succ.Identifier(), err)
+	}
+
+	succ, _ = n.Successor()
+	if between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
+		_ = n.adoptSuccessorList(succ_pred)
+		n.successorList.SetHead(succ_pred)
+	}
+
+	return nil
+}
+
+// adoptSuccessorList retains the current head of the successor list and copies all but the last entry of p on top
+// Not thread safe
+func (n *Node) adoptSuccessorList(p node) error {
+	if n == p {
+		return nil
+	}
+
+	newSuccList, err := p.SuccessorList()
+	if err != nil {
+		return err
+	}
+
+	n.successorList.Adopt(newSuccList)
+
+	return nil
+}
+
+func (n *Node) SuccessorList() (SuccessorList, error) {
+	return n.successorList, nil
+}
+
+func (n *Node) Rectify(newPredc node) error {
+	pred, _ := n.Predecessor()
+	if pred == nil || between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
+		n.predecessor = newPredc
+	} else {
+		if !newPredc.Alive() {
+			n.predecessor = newPredc
+		}
+	}
+
+	return nil
 }
 
 // fixFingers updates the finger table, it is expected to be called repeatedly and updates
@@ -134,17 +190,6 @@ func (n *Node) fixFingers() {
 
 	n.finger[n.nextFinger] = succ
 	n.nextFinger++
-}
-
-// Notify is called when Node p thinks it is our predecessor
-func (n *Node) Notify(p node) error {
-	pred, _ := n.Predecessor()
-	// If p is between our current predecessor and us, update it
-	if pred == nil || between(p.Identifier(), pred.Identifier(), n.Identifier()) {
-		n.predecessor = p
-	}
-
-	return nil
 }
 
 // FindSuccessor returns the successor node for a given Id by recursively asking the highest
@@ -185,6 +230,11 @@ func (n *Node) String() string {
 
 	succ, _ := n.Successor()
 	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, succ.Identifier())
+}
+
+// Alive returns the node's liveness, this is always true for a local node.
+func (n *Node) Alive() bool {
+	return true
 }
 
 // For handling circular intervals

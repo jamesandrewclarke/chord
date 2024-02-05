@@ -90,15 +90,15 @@ func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccesso
 	}, nil
 }
 
-func (s *server) Notify(ctx context.Context, in *chord_proto.Node) (*chord_proto.NotifyResponse, error) {
-	log.Printf("received notify request from %v", in.Identifier)
+func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_proto.RectifyResponse, error) {
+	log.Printf("received rectify request from %v", in.Identifier)
 
 	node := &RPCNode{
 		Address: in.Address,
 		Id:      Id(in.Identifier),
 	}
 
-	s.local.Notify(node)
+	s.local.Rectify(node)
 
-	return &chord_proto.NotifyResponse{}, nil
+	return &chord_proto.RectifyResponse{}, nil
 }

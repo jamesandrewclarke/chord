@@ -8,20 +8,27 @@ service Chord {
     rpc GetPredecessor(PredecessorRequest) returns (Node);
     rpc GetSuccessor(SuccessorRequest) returns (Node);
     rpc FindSuccessor(FindSuccessorRequest) returns (Node);
-    rpc Notify(Node) returns (NotifyResponse);
+    rpc Rectify(Node) returns (RectifyResponse);
     rpc Lookup(LookupRequest) returns (LookupResponse);
+    rpc SuccessorList(SuccessorListRequest) returns (SuccessorListResponse);
 }
 
 // Empty placeholders in case we need to add parameters in the future
 message PredecessorRequest {}
 message SuccessorRequest {}
+message SuccessorListRequest {}
 
 message HelloRequest {}
 
-message NotifyResponse {}
+message RectifyResponse {}
 
 message FindSuccessorRequest {
     int64 id = 1;
+}
+
+message SuccessorListResponse {
+    repeated Node nodes = 1;
+    int32 num_successors = 2;
 }
 
 message LookupRequest {

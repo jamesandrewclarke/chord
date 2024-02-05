@@ -93,7 +93,7 @@ func (n *RPCNode) FindSuccessor(id Id) (node, error) {
 	}, nil
 }
 
-func (n *RPCNode) Notify(p node) error {
+func (n *RPCNode) Rectify(p node) error {
 	chord_client, err := n.getConnection()
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (n *RPCNode) Notify(p node) error {
 		return err
 	}
 
-	_, err = chord_client.Notify(ctx, &chord_proto.Node{
+	_, err = chord_client.Rectify(ctx, &chord_proto.Node{
 		Address:    addr,
 		Identifier: int64(p.Identifier()),
 	})
@@ -117,4 +117,37 @@ func (n *RPCNode) Notify(p node) error {
 	}
 
 	return nil
+}
+
+func (n *RPCNode) SuccessorList() (SuccessorList, error) {
+	chord_client, err := n.getConnection()
+	if err != nil {
+		return SuccessorList{}, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	succListResponse, err := chord_client.SuccessorList(ctx, &chord_proto.SuccessorListRequest{})
+	if err != nil {
+		return SuccessorList{}, err
+	}
+
+	newSuccList := SuccessorList{}
+
+	for i := 0; i < int(succListResponse.NumSuccessors); i++ {
+		node := succListResponse.Nodes[i]
+		addr, _ := getPeerAddress(Id(node.Identifier))
+		newSuccList.successors[i] = &RPCNode{
+			Address: addr,
+			Id:      Id(node.Identifier),
+		}
+	}
+
+	return newSuccList, nil
+}
+
+func (n *RPCNode) Alive() bool {
+	_, err := n.getConnection()
+	return err == nil
 }

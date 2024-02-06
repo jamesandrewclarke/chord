@@ -48,3 +48,71 @@ func TestAdoptAdvanced(t *testing.T) {
 		assert.Equal(t, Id(i+1000-1), s.successors[i].Identifier())
 	}
 }
+
+func TestUniqueSuccessorsFalse(t *testing.T) {
+	s := SuccessorList{}
+	s.successors[0] = CreateNode(0)
+	s.successors[1] = CreateNode(0)
+
+	assert.False(t, s.UniqueSuccessors())
+}
+
+func TestUniqueSuccessorsTrue(t *testing.T) {
+	s := SuccessorList{}
+
+	for i := 0; i < r; i++ {
+		s.successors[i] = CreateNode(Id(i))
+	}
+
+	assert.True(t, s.UniqueSuccessors())
+}
+
+func TestUniqueSuccessorsEmpty(t *testing.T) {
+	s := SuccessorList{}
+	assert.True(t, s.UniqueSuccessors())
+}
+
+func TestOrderedTrue(t *testing.T) {
+	table := [][]Id{
+		// Ascending
+		{1, 2, 3},
+		{1, 2, 3, 4, 5, 6, 7},
+		{1, 16, 256, 4096, 65536},
+
+		// Wrap-around
+		{2, 3, 1},
+		{4, 5, 1, 2, 3},
+		{100, 200, 500, 50},
+
+		// Edge cases
+		{1},
+		{1, 2},
+		{},
+	}
+
+	for _, nums := range table {
+		s := SuccessorList{}
+		for i, num := range nums {
+			s.successors[i] = CreateNode(num)
+		}
+		assert.True(t, s.Ordered(), "%v should be true", nums)
+	}
+}
+
+func TestOrderedFalse(t *testing.T) {
+	table := [][]Id{
+		{4, 2, 6},
+		{1, 10, 2},
+		{100, 104, 102, 105, 107, 250},
+		{100, 104, 105, 106, 103},
+		{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+	}
+
+	for _, nums := range table {
+		s := SuccessorList{}
+		for i, num := range nums {
+			s.successors[i] = CreateNode(num)
+		}
+		assert.False(t, s.Ordered(), "%v should be false", nums)
+	}
+}

@@ -151,3 +151,16 @@ func (n *RPCNode) Alive() bool {
 	_, err := n.getConnection()
 	return err == nil
 }
+
+// String returns a basic string representation of the node for debugging purposes
+func (n *RPCNode) String() string {
+	var predecessor Id = -1
+
+	pred, _ := n.Predecessor()
+	if pred != nil {
+		predecessor = pred.Identifier()
+	}
+
+	succ, _ := n.Successor()
+	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, succ.Identifier())
+}

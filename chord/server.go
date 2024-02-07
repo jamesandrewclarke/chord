@@ -102,3 +102,22 @@ func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_prot
 
 	return &chord_proto.RectifyResponse{}, nil
 }
+
+func (s *server) SuccessorList(ctx context.Context, in *chord_proto.SuccessorListRequest) (*chord_proto.SuccessorListResponse, error) {
+	succ_list, _ := s.local.SuccessorList()
+	response := &chord_proto.SuccessorListResponse{}
+	response.Nodes = make([]*chord_proto.Node, r)
+	for i, succ := range succ_list.successors {
+		if succ == nil {
+			break
+		}
+		addr, _ := getPeerAddress(succ.Identifier())
+		response.NumSuccessors++
+		response.Nodes[i] = &chord_proto.Node{
+			Address:    addr,
+			Identifier: int64(succ.Identifier()),
+		}
+	}
+
+	return response, nil
+}

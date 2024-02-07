@@ -39,6 +39,7 @@ func CreateNode(Id Id) *Node {
 	}
 
 	n.setSuccessor(n)
+	n.predecessor = n
 	n.nextFinger = 1
 
 	return n
@@ -69,10 +70,18 @@ func (n *Node) Start() {
 		for {
 			err := n.stabilize()
 			if err != nil {
-				fmt.Printf("Error stabilizing on node %v: %v", n.Identifier(), err)
+				fmt.Printf("Error stabilizing on node %v: %v\n", n.Identifier(), err)
 			}
 			n.fixFingers()
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
+
+			if !n.successorList.UniqueSuccessors() {
+				fmt.Printf("WARNING: node %v has duplicate successors\n", n.Identifier())
+			}
+
+			if !n.successorList.Ordered() {
+				fmt.Printf("WARNING: node %v has disordered successors\n", n.Identifier())
+			}
 		}
 	}()
 
@@ -121,6 +130,11 @@ func (n *Node) stabilize() error {
 
 	succ_pred, err := succ.Predecessor()
 	if err != nil {
+		// Assume successor to be dead
+		n.successorList.PopHead()
+		n.setSuccessor(n.successorList.Head())
+
+		fmt.Printf("successor list is now %v\n", n.successorList.String())
 		return fmt.Errorf("can't retrieve successor %v's predecessor: %v", succ.Identifier(), err)
 	}
 
@@ -133,8 +147,9 @@ func (n *Node) stabilize() error {
 
 	succ, _ = n.Successor()
 	if between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
-		_ = n.adoptSuccessorList(succ_pred)
 		n.successorList.SetHead(succ_pred)
+		_ = n.adoptSuccessorList(succ_pred)
+		n.setSuccessor(succ_pred)
 	}
 
 	return nil
@@ -143,7 +158,7 @@ func (n *Node) stabilize() error {
 // adoptSuccessorList retains the current head of the successor list and copies all but the last entry of p on top
 // Not thread safe
 func (n *Node) adoptSuccessorList(p node) error {
-	if n == p {
+	if n.Identifier() == p.Identifier() {
 		return nil
 	}
 

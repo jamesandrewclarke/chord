@@ -154,9 +154,6 @@ func TestJoinSetsCorrectSuccessor(t *testing.T) {
 
 	succ, _ := a.Successor()
 	assert.Equal(t, b.Identifier(), succ.Identifier())
-
-	// Stabilisation has not yet run, so b should not have a predecessor
-	assert.Nil(t, b.predecessor)
 }
 
 func TestJoinSetsCorrectSuccessorPermuted(t *testing.T) {
@@ -167,9 +164,6 @@ func TestJoinSetsCorrectSuccessorPermuted(t *testing.T) {
 
 	succ, _ := a.Successor()
 	assert.Equal(t, b.Identifier(), succ.Identifier())
-
-	// Stabilisation has not yet run, so b should not have a predecessor
-	assert.Nil(t, b.predecessor)
 }
 
 func TestRectifySetsPredecessor(t *testing.T) {

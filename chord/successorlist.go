@@ -1,5 +1,10 @@
 package chord
 
+import (
+	"fmt"
+	"strings"
+)
+
 // TODO Make configurable
 const r = 16
 
@@ -17,6 +22,15 @@ func (s *SuccessorList) Adopt(t SuccessorList) {
 // Head returns the immediate successor
 func (s *SuccessorList) Head() node {
 	return s.successors[0]
+}
+
+// Removes the first element of the list
+func (s *SuccessorList) PopHead() {
+	// Shifts all elements back one place
+	for i := 1; i < r-1; i++ {
+		s.successors[i-1] = s.successors[i]
+	}
+	s.successors[r-1] = nil
 }
 
 // SetHead sets the immediate successor
@@ -66,4 +80,15 @@ func (s *SuccessorList) UniqueSuccessors() bool {
 	}
 
 	return true
+}
+
+func (s *SuccessorList) String() string {
+	line := ""
+	for _, succ := range s.successors {
+		if succ != nil {
+			line = strings.Join([]string{line, fmt.Sprintf("%v, ", succ.Identifier())}, "")
+		}
+	}
+
+	return line
 }

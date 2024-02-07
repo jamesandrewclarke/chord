@@ -15,6 +15,19 @@ func TestHeadReturnsCorrectNode(t *testing.T) {
 	assert.Equal(t, n, s.Head())
 }
 
+func TestPopHeadRemovesCorrectNode(t *testing.T) {
+	s := SuccessorList{}
+	for i := 0; i < 10; i++ {
+		s.successors[i] = CreateNode(Id(i))
+	}
+	s.PopHead()
+	assert.Equal(t, s.Head().Identifier(), Id(1))
+	for i := 0; i < 9; i++ {
+		assert.Equal(t, s.successors[i].Identifier(), Id(i+1))
+	}
+	assert.Nil(t, s.successors[9], "final element should be nil")
+}
+
 func TestAdoptSimple(t *testing.T) {
 	s := SuccessorList{}
 	testNode := CreateNode(1)

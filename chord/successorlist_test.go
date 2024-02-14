@@ -45,19 +45,19 @@ func TestAdoptSimple(t *testing.T) {
 
 func TestAdoptAdvanced(t *testing.T) {
 	s := SuccessorList{}
-	for i := 0; i < r; i++ {
+	for i := 0; i < SUCCESSOR_LIST_SIZE; i++ {
 		s.successors[i] = CreateNode(Id(i))
 	}
 
 	u := SuccessorList{}
-	for i := 0; i < r; i++ {
+	for i := 0; i < SUCCESSOR_LIST_SIZE; i++ {
 		u.successors[i] = CreateNode(Id(i + 1000))
 	}
 
 	s.Adopt(u)
 
 	assert.Equal(t, Id(0), s.Head().Identifier())
-	for i := 1; i < r; i++ {
+	for i := 1; i < SUCCESSOR_LIST_SIZE; i++ {
 		assert.Equal(t, Id(i+1000-1), s.successors[i].Identifier())
 	}
 }
@@ -73,7 +73,7 @@ func TestUniqueSuccessorsFalse(t *testing.T) {
 func TestUniqueSuccessorsTrue(t *testing.T) {
 	s := SuccessorList{}
 
-	for i := 0; i < r; i++ {
+	for i := 0; i < SUCCESSOR_LIST_SIZE; i++ {
 		s.successors[i] = CreateNode(Id(i))
 	}
 

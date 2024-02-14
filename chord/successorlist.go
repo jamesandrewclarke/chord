@@ -6,15 +6,15 @@ import (
 )
 
 // TODO Make configurable
-const r = 16
+const SUCCESSOR_LIST_SIZE = 16
 
 type SuccessorList struct {
-	successors [r]node
+	successors [SUCCESSOR_LIST_SIZE]node
 }
 
 // Adopt copies all values from another successor list but retains the head
 func (s *SuccessorList) Adopt(t SuccessorList) {
-	for i := 0; i < r-1; i++ {
+	for i := 0; i < SUCCESSOR_LIST_SIZE-1; i++ {
 		s.successors[i+1] = t.successors[i]
 	}
 }
@@ -27,10 +27,10 @@ func (s *SuccessorList) Head() node {
 // Removes the first element of the list
 func (s *SuccessorList) PopHead() {
 	// Shifts all elements back one place
-	for i := 1; i < r-1; i++ {
+	for i := 1; i < SUCCESSOR_LIST_SIZE-1; i++ {
 		s.successors[i-1] = s.successors[i]
 	}
-	s.successors[r-1] = nil
+	s.successors[SUCCESSOR_LIST_SIZE-1] = nil
 }
 
 // SetHead sets the immediate successor
@@ -43,15 +43,15 @@ func (s *SuccessorList) SetHead(p node) {
 func (s *SuccessorList) Ordered() bool {
 	// TODO Could be better than O(r^3)?
 	// Exhaustive check for now just to be sure
-	for i := 0; i < r-2; i++ {
+	for i := 0; i < SUCCESSOR_LIST_SIZE-2; i++ {
 		if s.successors[i] == nil {
 			continue
 		}
-		for j := i + 1; j < r-1; j++ {
+		for j := i + 1; j < SUCCESSOR_LIST_SIZE-1; j++ {
 			if s.successors[j] == nil {
 				continue
 			}
-			for k := j + 1; k < r; k++ {
+			for k := j + 1; k < SUCCESSOR_LIST_SIZE; k++ {
 				if s.successors[k] == nil {
 					continue
 				}

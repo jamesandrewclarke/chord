@@ -106,7 +106,7 @@ func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_prot
 func (s *server) SuccessorList(ctx context.Context, in *chord_proto.SuccessorListRequest) (*chord_proto.SuccessorListResponse, error) {
 	succ_list, _ := s.local.SuccessorList()
 	response := &chord_proto.SuccessorListResponse{}
-	response.Nodes = make([]*chord_proto.Node, r)
+	response.Nodes = make([]*chord_proto.Node, SUCCESSOR_LIST_SIZE)
 	for i, succ := range succ_list.successors {
 		if succ == nil {
 			break

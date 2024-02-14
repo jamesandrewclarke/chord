@@ -9,7 +9,7 @@ func main() {
 	lead := chord.CreateNode(0)
 	lead.Start()
 
-	n := 8
+	n := 32
 	s := make([]*chord.Node, n)
 
 	for i := 1; i < n; i++ {

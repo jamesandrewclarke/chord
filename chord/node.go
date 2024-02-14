@@ -34,8 +34,7 @@ type node interface {
 // CreateNode initialises a single-node Chord ring
 func CreateNode(Id Id) *Node {
 	n := &Node{
-		id:          Id,
-		predecessor: nil,
+		id: Id,
 	}
 
 	n.setSuccessor(n)

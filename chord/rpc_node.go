@@ -148,8 +148,16 @@ func (n *RPCNode) SuccessorList() (SuccessorList, error) {
 }
 
 func (n *RPCNode) Alive() bool {
-	_, err := n.getConnection()
-	return err == nil
+	client, _ := n.getConnection()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err := client.GetSuccessor(ctx, &chord_proto.SuccessorRequest{})
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // String returns a basic string representation of the node for debugging purposes

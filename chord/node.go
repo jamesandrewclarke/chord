@@ -67,6 +67,8 @@ func (n *Node) Start() {
 	go func() {
 		// TODO Configurable intervals for experiments
 		for {
+			n.checkPredecessor()
+
 			err := n.stabilize()
 			if err != nil {
 				fmt.Printf("Error stabilizing on node %v: %v\n", n.Identifier(), err)
@@ -173,6 +175,13 @@ func (n *Node) adoptSuccessorList(p node) error {
 
 func (n *Node) SuccessorList() (SuccessorList, error) {
 	return n.successorList, nil
+}
+
+// checkPredecessor verifies that the current predecesor is alive. If not, the predecessor is reset.
+func (n *Node) checkPredecessor() {
+	if n.predecessor != nil && !n.predecessor.Alive() {
+		n.predecessor = nil
+	}
 }
 
 func (n *Node) Rectify(newPredc node) error {

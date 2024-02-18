@@ -87,6 +87,8 @@ func (s *SuccessorList) String() string {
 	for _, succ := range s.successors {
 		if succ != nil {
 			line = strings.Join([]string{line, fmt.Sprintf("%v, ", succ.Identifier())}, "")
+		} else {
+			line = strings.Join([]string{line, "* "}, "")
 		}
 	}
 

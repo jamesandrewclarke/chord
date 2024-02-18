@@ -27,7 +27,7 @@ func (s *SuccessorList) Head() node {
 // Removes the first element of the list
 func (s *SuccessorList) PopHead() {
 	// Shifts all elements back one place
-	for i := 1; i < SUCCESSOR_LIST_SIZE-1; i++ {
+	for i := 1; i < SUCCESSOR_LIST_SIZE; i++ {
 		s.successors[i-1] = s.successors[i]
 	}
 	s.successors[SUCCESSOR_LIST_SIZE-1] = nil

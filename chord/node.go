@@ -219,6 +219,10 @@ func (n *Node) fixFingers() {
 // node in our finger table which comes precedes the given Id
 func (n *Node) FindSuccessor(Id Id) (node, error) {
 	succ, _ := n.Successor()
+	if succ == nil {
+		return nil, fmt.Errorf("could not find a successor as the node's successor is nil")
+	}
+
 	if between(Id, n.Identifier(), succ.Identifier()+1) {
 		return succ, nil
 	}

@@ -3,12 +3,17 @@ package chord
 import (
 	"fmt"
 	"log"
+	"log/slog"
+	"sync"
 	"time"
 )
 
 type Id int64
 
 const m = 64
+
+// The stabilization interval in milliseconds
+const STABILIZE_INTERVAL = 3000
 
 type Node struct {
 	id Id
@@ -19,6 +24,9 @@ type Node struct {
 	successorList SuccessorList
 
 	nextFinger int
+
+	shutdown chan struct{}
+	wg       *sync.WaitGroup
 }
 
 type node interface {
@@ -34,7 +42,9 @@ type node interface {
 // CreateNode initialises a single-node Chord ring
 func CreateNode(Id Id) *Node {
 	n := &Node{
-		id: Id,
+		id:       Id,
+		shutdown: make(chan struct{}),
+		wg:       new(sync.WaitGroup),
 	}
 
 	n.setSuccessor(n)
@@ -64,34 +74,50 @@ func (n *Node) Successor() (node, error) {
 
 // Start starts the background tasks to stabilize n's pointers and lookup table
 func (n *Node) Start() {
+	n.wg.Add(1)
 	go func() {
+		ticker := time.NewTicker(STABILIZE_INTERVAL * time.Millisecond)
+		defer ticker.Stop()
+		defer n.wg.Done()
+
 		// TODO Configurable intervals for experiments
 		for {
-			n.checkPredecessor()
+			select {
+			case <-ticker.C:
+				n.checkPredecessor()
 
-			err := n.stabilize()
-			if err != nil {
-				fmt.Printf("Error stabilizing on node %v: %v\n", n.Identifier(), err)
-			}
-			n.fixFingers()
-			time.Sleep(1000 * time.Millisecond)
+				err := n.stabilize()
+				if err != nil {
+					slog.Error("failed stabilization", "node", n.Identifier(), "err", err)
+				}
+				n.fixFingers()
+				if !n.successorList.UniqueSuccessors() {
+					slog.Warn("duplicate successors", "node", n.Identifier())
+				}
 
-			if !n.successorList.UniqueSuccessors() {
-				fmt.Printf("WARNING: node %v has duplicate successors\n", n.Identifier())
-			}
+				if !n.successorList.Ordered() {
+					slog.Warn("disordered successors", "node", n.Identifier())
+				}
 
-			if !n.successorList.Ordered() {
-				fmt.Printf("WARNING: node %v has disordered successors\n", n.Identifier())
+			case <-n.shutdown:
+				return
 			}
 		}
 	}()
 
 	go func() {
 		for {
-			fmt.Println(n)
+			slog.Info("state", "state", n.String())
 			time.Sleep(3 * time.Second)
 		}
 	}()
+}
+
+func (n *Node) Stop() {
+	close(n.shutdown)
+	slog.Info("graceful shutdown")
+	n.wg.Wait()
+	slog.Info("shutdown complete")
 }
 
 // Join joins a Chord ring containing the node p
@@ -120,7 +146,10 @@ func (n *Node) stabilize() error {
 	defer func() {
 		succ, _ := n.Successor()
 		if succ != nil {
-			succ.Rectify(n)
+			err := succ.Rectify(n)
+			if err != nil {
+				fmt.Printf("Error rectifying %v\n", err)
+			}
 		}
 	}()
 
@@ -135,7 +164,7 @@ func (n *Node) stabilize() error {
 		n.successorList.PopHead()
 		n.setSuccessor(n.successorList.Head())
 
-		fmt.Printf("successor list is now %v\n", n.successorList.String())
+		slog.Info("successor list updated", "list", n.successorList.String())
 		return fmt.Errorf("can't retrieve successor %v's predecessor: %v", succ.Identifier(), err)
 	}
 

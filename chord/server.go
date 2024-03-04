@@ -100,6 +100,8 @@ func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_prot
 		Id:      Id(in.Identifier),
 	}
 
+	// Definitely validate
+	SetPeerAddress(node.Id, node.Address)
 	s.local.Rectify(node)
 
 	return &chord_proto.RectifyResponse{}, nil

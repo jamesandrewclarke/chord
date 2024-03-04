@@ -10,7 +10,9 @@ $(PROTOC_GEN_GO_GRPC):
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
 protos/chord_grpc.pb.go protos/chord.pb.go : protos/chord.proto | $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
-	protoc --go_out=. --go_opt=paths=source_relative \
+	protoc \
+		--experimental_allow_proto3_optional \
+		--go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	$<
 

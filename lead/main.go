@@ -9,12 +9,10 @@ import (
 )
 
 func main() {
-	node := chord.CreateNode(4561)
+	id := chord.IdentifierFromAddress("127.0.0.1:8080")
+	node := chord.CreateNode(id)
 
-	chord.SetPeerAddress(4561, "localhost:8080")
-	chord.SetPeerAddress(58752, "localhost:8081")
-	chord.SetPeerAddress(239847, "localhost:8082")
-	chord.SetPeerAddress(2123, "localhost:8083")
+	chord.SetPeerAddress(id, "127.0.0.1:8080")
 
 	go func() {
 		chord.StartServer(node, 8080)
@@ -27,4 +25,5 @@ func main() {
 
 	<-c
 	fmt.Println("Exiting...")
+	node.Stop()
 }

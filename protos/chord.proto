@@ -11,6 +11,7 @@ service Chord {
     rpc Rectify(Node) returns (RectifyResponse);
     rpc Lookup(LookupRequest) returns (LookupResponse);
     rpc SuccessorList(SuccessorListRequest) returns (SuccessorListResponse);
+    rpc Announce(AnnounceRequest) returns (Node);
 }
 
 // Empty placeholders in case we need to add parameters in the future
@@ -21,6 +22,13 @@ message SuccessorListRequest {}
 message HelloRequest {}
 
 message RectifyResponse {}
+
+message AnnounceRequest {
+    int32 port = 1;
+
+    // Can optionally specify the address to be reached at
+    optional string address = 2;
+}
 
 message FindSuccessorRequest {
     int64 id = 1;

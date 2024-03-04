@@ -8,6 +8,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 )
 
 type server struct {
@@ -35,6 +36,7 @@ func (s *server) GetPredecessor(ctx context.Context, in *chord_proto.Predecessor
 
 	p, err := s.local.Predecessor()
 	if err != nil {
+		fmt.Printf("%v\n", err)
 		return &chord_proto.Node{}, err
 	}
 
@@ -120,4 +122,39 @@ func (s *server) SuccessorList(ctx context.Context, in *chord_proto.SuccessorLis
 	}
 
 	return response, nil
+}
+
+func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) (*chord_proto.Node, error) {
+	// Take the announcement message and update the directory
+
+	// Extract the IP address from the call
+	// Add to directory along with user supplied port
+
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("could not retrieve peer")
+	}
+
+	var host string
+	if in.Address == nil {
+		// User has not supplied optional return address,
+		// so retrieve it from the network layer
+		host, _, _ = net.SplitHostPort(p.Addr.String())
+	} else {
+		host = *in.Address
+	}
+
+	endpointAddress := fmt.Sprintf("[%s]:%d", host, in.Port)
+	id := IdentifierFromAddress(endpointAddress)
+
+	// Update the directory with the new peer
+	// perhaps some error handling
+	log.Printf("Discovered new peer address: %v", endpointAddress)
+
+	SetPeerAddress(id, endpointAddress)
+
+	return &chord_proto.Node{
+		Address:    endpointAddress,
+		Identifier: int64(id),
+	}, nil
 }

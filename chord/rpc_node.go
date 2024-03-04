@@ -160,6 +160,24 @@ func (n *RPCNode) Alive() bool {
 	return true
 }
 
+func (n *RPCNode) Announce(port int, addr *string) Id {
+	client, _ := n.getConnection()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	res, err := client.Announce(ctx, &chord_proto.AnnounceRequest{
+		Port:    int32(port),
+		Address: addr,
+	})
+
+	if err != nil {
+		return -1
+	}
+
+	return Id(res.Identifier)
+}
+
 // String returns a basic string representation of the node for debugging purposes
 func (n *RPCNode) String() string {
 	var predecessor Id = -1

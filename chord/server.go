@@ -32,8 +32,6 @@ func StartServer(node node, port int) {
 }
 
 func (s *server) GetPredecessor(ctx context.Context, in *chord_proto.PredecessorRequest) (*chord_proto.Node, error) {
-	log.Printf("received predecessor request")
-
 	p, err := s.local.Predecessor()
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -52,8 +50,6 @@ func (s *server) GetPredecessor(ctx context.Context, in *chord_proto.Predecessor
 }
 
 func (s *server) GetSuccessor(ctx context.Context, in *chord_proto.SuccessorRequest) (*chord_proto.Node, error) {
-	log.Printf("received successor request")
-
 	p, err := s.local.Successor()
 	if err != nil {
 		return nil, err
@@ -71,8 +67,6 @@ func (s *server) GetSuccessor(ctx context.Context, in *chord_proto.SuccessorRequ
 }
 
 func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccessorRequest) (*chord_proto.Node, error) {
-	log.Printf("received findsuccessor request")
-
 	lookupID := in.Id
 	p, err := s.local.FindSuccessor(Id(lookupID))
 	if err != nil {
@@ -93,8 +87,6 @@ func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccesso
 }
 
 func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_proto.RectifyResponse, error) {
-	log.Printf("received rectify request from %v", in.Identifier)
-
 	node := &RPCNode{
 		Address: in.Address,
 		Id:      Id(in.Identifier),

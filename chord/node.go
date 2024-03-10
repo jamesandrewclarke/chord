@@ -18,8 +18,11 @@ const STABILIZE_INTERVAL = 3000
 type Node struct {
 	id Id
 
+	muPred      sync.Mutex
 	predecessor node
-	finger      [m]node
+
+	muFinger sync.Mutex
+	finger   [m]node
 
 	successorList SuccessorList
 
@@ -92,11 +95,11 @@ func (n *Node) Start() {
 				}
 				n.fixFingers()
 				if !n.successorList.UniqueSuccessors() {
-					slog.Warn("duplicate successors", "node", n.Identifier())
+					// slog.Warn("duplicate successors", "node", n.Identifier())
 				}
 
 				if !n.successorList.Ordered() {
-					slog.Warn("disordered successors", "node", n.Identifier())
+					// slog.Warn("disordered successors", "node", n.Identifier())
 				}
 
 			case <-n.shutdown:
@@ -208,18 +211,25 @@ func (n *Node) SuccessorList() (SuccessorList, error) {
 
 // checkPredecessor verifies that the current predecesor is alive. If not, the predecessor is reset.
 func (n *Node) checkPredecessor() {
+	n.muPred.Lock()
+	defer n.muPred.Unlock()
 	if n.predecessor != nil && !n.predecessor.Alive() {
+		fmt.Println("The predecessor is dead, resetting")
 		n.predecessor = nil
 	}
 }
 
 func (n *Node) Rectify(newPredc node) error {
+	n.muPred.Lock()
+	defer n.muPred.Unlock()
+
 	pred, _ := n.Predecessor()
 	if pred == nil || between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
 		n.predecessor = newPredc
 	} else {
 		if !newPredc.Alive() {
-			n.predecessor = newPredc
+			// this line makes no sense
+			//n.predecessor = newPredc
 		}
 	}
 
@@ -240,6 +250,8 @@ func (n *Node) fixFingers() {
 		return
 	}
 
+	n.muFinger.Lock()
+	defer n.muFinger.Unlock()
 	n.finger[n.nextFinger] = succ
 	n.nextFinger++
 }
@@ -266,6 +278,9 @@ func (n *Node) FindSuccessor(Id Id) (node, error) {
 
 // closestPrecedingNode returns the highest entry in the finger table which precedes Id
 func (n *Node) closestPrecedingNode(Id Id) node {
+	n.muFinger.Lock()
+	defer n.muFinger.Unlock()
+
 	for i := m - 1; i >= 0; i-- {
 		if n.finger[i] != nil && between(n.finger[i].Identifier(), n.Identifier(), Id) {
 			return n.finger[i]

@@ -150,14 +150,14 @@ func (n *RPCNode) SuccessorList() (SuccessorList, error) {
 func (n *RPCNode) Alive() bool {
 	client, _ := n.getConnection()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
-	_, err := client.GetSuccessor(ctx, &chord_proto.SuccessorRequest{})
-	if err != nil {
-		return false
-	}
+	_, err := client.Alive(ctx, &chord_proto.LivenessRequest{})
 
-	return true
+	if err != nil {
+		fmt.Printf("not alive: %v\n", err)
+	}
+	return err == nil
 }
 
 func (n *RPCNode) Announce(port int, addr *string) Id {

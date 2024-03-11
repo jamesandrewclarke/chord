@@ -12,16 +12,19 @@ service Chord {
     rpc Lookup(LookupRequest) returns (LookupResponse);
     rpc SuccessorList(SuccessorListRequest) returns (SuccessorListResponse);
     rpc Announce(AnnounceRequest) returns (Node);
+    rpc Alive(LivenessRequest) returns (LivenessResponse);
 }
 
 // Empty placeholders in case we need to add parameters in the future
 message PredecessorRequest {}
 message SuccessorRequest {}
 message SuccessorListRequest {}
+message LivenessRequest {}
 
 message HelloRequest {}
 
 message RectifyResponse {}
+message LivenessResponse{}
 
 message AnnounceRequest {
     int32 port = 1;

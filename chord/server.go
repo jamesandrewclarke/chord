@@ -152,3 +152,7 @@ func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) 
 		Identifier: int64(id),
 	}, nil
 }
+
+func (s *server) Alive(ctx context.Context, in *chord_proto.LivenessRequest) (*chord_proto.LivenessResponse, error) {
+	return &chord_proto.LivenessResponse{}, nil
+}

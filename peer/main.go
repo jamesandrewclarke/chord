@@ -30,15 +30,19 @@ func main() {
 	node := chord.CreateNode(id)
 
 	// yes
-	chord.SetPeerAddress(id, fmt.Sprintf("localhost:%v", *PORT))
+	chord.SetPeerAddress(id, fmt.Sprintf("127.0.0.1:%v", *PORT))
 	chord.SetPeerAddress(lead_id, *BOOTSTRAP_ADDRESS)
+
+	err := node.Join(remote)
+	if err != nil {
+		panic(err)
+	}
+
+	node.Start()
 
 	go func() {
 		chord.StartServer(node, *PORT)
 	}()
-
-	node.Join(remote)
-	node.Start()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)

@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const TIMEOUT = 10 * time.Second
+
 // RPCNode represents a remote node accessed over the network
 type RPCNode struct {
 	Address string
@@ -20,7 +22,7 @@ type RPCNode struct {
 func (n *RPCNode) getConnection() (chord_proto.ChordClient, error) {
 	conn, err := grpc.Dial(n.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		fmt.Printf("error getting connection! %v", err)
+		fmt.Printf("error getting connection: %v\n", err)
 		return nil, err
 	}
 
@@ -37,13 +39,15 @@ func (n *RPCNode) Predecessor() (node, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	p, err := chord_client.GetPredecessor(ctx, &chord_proto.PredecessorRequest{})
 	if err != nil {
 		return nil, err
 	}
+
+	SetPeerAddress(Id(p.Identifier), p.Address)
 
 	return &RPCNode{
 		Id:      Id(p.Identifier),
@@ -57,13 +61,15 @@ func (n *RPCNode) Successor() (node, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	p, err := chord_client.GetSuccessor(ctx, &chord_proto.SuccessorRequest{})
 	if err != nil {
 		return nil, err
 	}
+
+	SetPeerAddress(Id(p.Identifier), p.Address)
 
 	return &RPCNode{
 		Id:      Id(p.Identifier),
@@ -77,7 +83,7 @@ func (n *RPCNode) FindSuccessor(id Id) (node, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	p, err := chord_client.FindSuccessor(ctx, &chord_proto.FindSuccessorRequest{
@@ -86,6 +92,8 @@ func (n *RPCNode) FindSuccessor(id Id) (node, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	SetPeerAddress(Id(p.Identifier), p.Address)
 
 	return &RPCNode{
 		Id:      Id(p.Identifier),
@@ -99,7 +107,7 @@ func (n *RPCNode) Rectify(p node) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	addr, err := getPeerAddress(p.Identifier())
@@ -125,7 +133,7 @@ func (n *RPCNode) SuccessorList() (SuccessorList, error) {
 		return SuccessorList{}, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	succListResponse, err := chord_client.SuccessorList(ctx, &chord_proto.SuccessorListRequest{})
@@ -142,6 +150,8 @@ func (n *RPCNode) SuccessorList() (SuccessorList, error) {
 			Address: addr,
 			Id:      Id(node.Identifier),
 		}
+
+		SetPeerAddress(Id(node.Identifier), addr)
 	}
 
 	return newSuccList, nil
@@ -163,7 +173,7 @@ func (n *RPCNode) Alive() bool {
 func (n *RPCNode) Announce(port int, addr *string) Id {
 	client, _ := n.getConnection()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	res, err := client.Announce(ctx, &chord_proto.AnnounceRequest{

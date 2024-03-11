@@ -3,17 +3,22 @@ package chord
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // TODO Make configurable
-const SUCCESSOR_LIST_SIZE = 16
+const SUCCESSOR_LIST_SIZE = 5
 
 type SuccessorList struct {
+	mu         sync.Mutex
 	successors [SUCCESSOR_LIST_SIZE]node
 }
 
 // Adopt copies all values from another successor list but retains the head
 func (s *SuccessorList) Adopt(t SuccessorList) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	for i := 0; i < SUCCESSOR_LIST_SIZE-1; i++ {
 		s.successors[i+1] = t.successors[i]
 	}
@@ -21,11 +26,17 @@ func (s *SuccessorList) Adopt(t SuccessorList) {
 
 // Head returns the immediate successor
 func (s *SuccessorList) Head() node {
+	mu.Lock()
+	defer mu.Unlock()
+
 	return s.successors[0]
 }
 
 // Removes the first element of the list
 func (s *SuccessorList) PopHead() {
+	mu.Lock()
+	defer mu.Unlock()
+
 	// Shifts all elements back one place
 	for i := 1; i < SUCCESSOR_LIST_SIZE; i++ {
 		s.successors[i-1] = s.successors[i]
@@ -35,6 +46,9 @@ func (s *SuccessorList) PopHead() {
 
 // SetHead sets the immediate successor
 func (s *SuccessorList) SetHead(p node) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	s.successors[0] = p
 }
 
@@ -83,6 +97,9 @@ func (s *SuccessorList) UniqueSuccessors() bool {
 }
 
 func (s *SuccessorList) String() string {
+	mu.Lock()
+	defer mu.Unlock()
+
 	line := ""
 	for _, succ := range s.successors {
 		if succ != nil {

@@ -107,7 +107,12 @@ func (s *server) SuccessorList(ctx context.Context, in *chord_proto.SuccessorLis
 		if succ == nil {
 			break
 		}
-		addr, _ := getPeerAddress(succ.Identifier())
+		addr, err := getPeerAddress(succ.Identifier())
+		if err != nil {
+			log.Printf("error getting peer address of %v: %v", succ.Identifier(), err)
+			return nil, err
+		}
+
 		response.NumSuccessors++
 		response.Nodes[i] = &chord_proto.Node{
 			Address:    addr,

@@ -148,7 +148,7 @@ func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) 
 
 	// Update the directory with the new peer
 	// perhaps some error handling
-	log.Printf("Discovered new peer address: %v", endpointAddress)
+	log.Printf("Discovered new peer %v: %v", id, endpointAddress)
 
 	SetPeerAddress(id, endpointAddress)
 

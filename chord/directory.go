@@ -2,40 +2,39 @@ package chord
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"sync"
 )
 
-var mu sync.Mutex
+type peerStore struct {
+	mu            sync.Mutex
+	peerAddresses map[Id]node
+}
 
-var peerAddresses map[Id]string
+var store peerStore
 
 func init() {
-	peerAddresses = make(map[Id]string)
+	store.peerAddresses = make(map[Id]node)
 }
 
-func SetPeerAddress(id Id, addr string) {
-	_, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		log.Printf("Invalid address for %v: `%v`", id, addr)
+func SavePeer(node node) {
+	if node == nil {
+		fmt.Printf("Received nil node for saving")
 		return
 	}
-
-	mu.Lock()
-	defer mu.Unlock()
-	if currAddr, ok := peerAddresses[id]; ok && currAddr != addr {
-		log.Printf("overwriting address for %d\n from %v to %v", id, currAddr, addr)
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if curr, ok := store.peerAddresses[node.Identifier()]; ok && curr != node {
+		// log.Printf("overwriting peer for %d\n with: %v", node.Identifier(), node.String())
 	}
-	peerAddresses[id] = addr
+	store.peerAddresses[node.Identifier()] = node
 }
 
-func getPeerAddress(id Id) (string, error) {
-	mu.Lock()
-	defer mu.Unlock()
-	if addr, ok := peerAddresses[id]; ok {
-		return addr, nil
+func GetPeer(id Id) (node, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if node, ok := store.peerAddresses[id]; ok {
+		return node, nil
 	}
 
-	return "", fmt.Errorf("unable to locate peer %v in cache", id)
+	return nil, fmt.Errorf("peer %v not fonud in directory", id)
 }

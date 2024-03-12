@@ -47,12 +47,13 @@ func (n *RPCNode) Predecessor() (node, error) {
 		return nil, err
 	}
 
-	SetPeerAddress(Id(p.Identifier), p.Address)
-
-	return &RPCNode{
+	newNode := &RPCNode{
 		Id:      Id(p.Identifier),
 		Address: p.Address,
-	}, nil
+	}
+	SavePeer(newNode)
+
+	return newNode, nil
 }
 
 func (n *RPCNode) Successor() (node, error) {
@@ -69,12 +70,13 @@ func (n *RPCNode) Successor() (node, error) {
 		return nil, err
 	}
 
-	SetPeerAddress(Id(p.Identifier), p.Address)
-
-	return &RPCNode{
+	newNode := &RPCNode{
 		Id:      Id(p.Identifier),
 		Address: p.Address,
-	}, nil
+	}
+	SavePeer(newNode)
+
+	return newNode, nil
 }
 
 func (n *RPCNode) FindSuccessor(id Id) (node, error) {
@@ -93,12 +95,13 @@ func (n *RPCNode) FindSuccessor(id Id) (node, error) {
 		return nil, err
 	}
 
-	SetPeerAddress(Id(p.Identifier), p.Address)
-
-	return &RPCNode{
+	newNode := &RPCNode{
 		Id:      Id(p.Identifier),
 		Address: p.Address,
-	}, nil
+	}
+	SavePeer(newNode)
+
+	return newNode, nil
 }
 
 func (n *RPCNode) Rectify(p node) error {
@@ -110,15 +113,12 @@ func (n *RPCNode) Rectify(p node) error {
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
-	addr, err := getPeerAddress(p.Identifier())
+	node, err := GetPeer(p.Identifier())
 	if err != nil {
 		return err
 	}
 
-	_, err = chord_client.Rectify(ctx, &chord_proto.Node{
-		Address:    addr,
-		Identifier: int64(p.Identifier()),
-	})
+	_, err = chord_client.Rectify(ctx, serializePeer(node))
 
 	if err != nil {
 		return err
@@ -145,13 +145,12 @@ func (n *RPCNode) SuccessorList() (SuccessorList, error) {
 
 	for i := 0; i < int(succListResponse.NumSuccessors); i++ {
 		node := succListResponse.Nodes[i]
-		addr, _ := getPeerAddress(Id(node.Identifier))
-		newSuccList.successors[i] = &RPCNode{
-			Address: addr,
+		newNode := &RPCNode{
+			Address: node.Address,
 			Id:      Id(node.Identifier),
 		}
-
-		SetPeerAddress(Id(node.Identifier), addr)
+		SavePeer(newNode)
+		newSuccList.successors[i] = newNode
 	}
 
 	return newSuccList, nil
@@ -190,13 +189,10 @@ func (n *RPCNode) Announce(port int, addr *string) Id {
 
 // String returns a basic string representation of the node for debugging purposes
 func (n *RPCNode) String() string {
-	var predecessor Id = -1
-
-	pred, _ := n.Predecessor()
-	if pred != nil {
-		predecessor = pred.Identifier()
+	var addr = "?"
+	if n.Address != "" {
+		addr = n.Address
 	}
 
-	succ, _ := n.Successor()
-	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, succ.Identifier())
+	return fmt.Sprintf("id = %v, address = %v", n.Identifier(), addr)
 }

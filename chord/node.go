@@ -13,7 +13,7 @@ type Id int64
 const m = 64
 
 // The stabilization interval in milliseconds
-const STABILIZE_INTERVAL = 3000
+const STABILIZE_INTERVAL = 5000
 
 type Node struct {
 	id Id
@@ -40,6 +40,7 @@ type node interface {
 	Rectify(node) error
 	SuccessorList() (SuccessorList, error)
 	Alive() bool
+	String() string
 }
 
 // CreateNode initialises a single-node Chord ring
@@ -95,12 +96,14 @@ func (n *Node) Start() {
 				}
 				n.fixFingers()
 				if !n.successorList.UniqueSuccessors() {
-					// slog.Warn("duplicate successors", "node", n.Identifier())
+					slog.Warn("duplicate successors", "node", n.Identifier())
 				}
 
 				if !n.successorList.Ordered() {
-					// slog.Warn("disordered successors", "node", n.Identifier())
+					slog.Warn("disordered successors", "node", n.Identifier())
 				}
+
+				fmt.Println(n.successorList.String())
 
 			case <-n.shutdown:
 				return
@@ -138,9 +141,15 @@ func (n *Node) Join(p node) error {
 
 // setSuccessor is a safe wrapper method for setting n's immediate successor
 func (n *Node) setSuccessor(p node) {
+	if p == nil {
+		log.Printf("received setSuccessor for nil")
+		return
+	}
 	n.successorList.SetHead(p)
 
 	// TODO do we need separate locations?
+	n.muFinger.Lock()
+	defer n.muFinger.Unlock()
 	n.finger[0] = p
 }
 

@@ -12,7 +12,12 @@ func main() {
 	id := chord.IdentifierFromAddress("127.0.0.1:8080")
 	node := chord.CreateNode(id)
 
-	chord.SetPeerAddress(id, "127.0.0.1:8080")
+	chord.SavePeer(&chord.RPCNode{
+		Id:      id,
+		Address: "127.0.0.1:8080",
+	})
+
+	chord.SetExternalAddress("127.0.0.1:8080")
 
 	go func() {
 		chord.StartServer(node, 8080)

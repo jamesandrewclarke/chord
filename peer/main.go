@@ -29,9 +29,10 @@ func main() {
 	id := remote.Announce(*PORT, nil)
 	node := chord.CreateNode(id)
 
-	// yes
-	chord.SetPeerAddress(id, fmt.Sprintf("127.0.0.1:%v", *PORT))
-	chord.SetPeerAddress(lead_id, *BOOTSTRAP_ADDRESS)
+	chord.SavePeer(node)
+	chord.SavePeer(remote)
+
+	chord.SetExternalAddress(fmt.Sprintf("127.0.0.1:%v", *PORT))
 
 	err := node.Join(remote)
 	if err != nil {

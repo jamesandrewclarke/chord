@@ -16,6 +16,8 @@ type server struct {
 	chord_proto.UnimplementedChordServer
 }
 
+var externalAddress string
+
 func StartServer(node node, port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", port))
 	if err != nil {
@@ -38,15 +40,12 @@ func (s *server) GetPredecessor(ctx context.Context, in *chord_proto.Predecessor
 		return &chord_proto.Node{}, err
 	}
 
-	addr, err := getPeerAddress(p.Identifier())
+	node, err := GetPeer(p.Identifier())
 	if err != nil {
 		return &chord_proto.Node{}, err
 	}
 
-	return &chord_proto.Node{
-		Address:    addr,
-		Identifier: int64(p.Identifier()),
-	}, nil
+	return serializePeer(node), nil
 }
 
 func (s *server) GetSuccessor(ctx context.Context, in *chord_proto.SuccessorRequest) (*chord_proto.Node, error) {
@@ -55,15 +54,12 @@ func (s *server) GetSuccessor(ctx context.Context, in *chord_proto.SuccessorRequ
 		return nil, err
 	}
 
-	addr, err := getPeerAddress(p.Identifier())
+	node, err := GetPeer(p.Identifier())
 	if err != nil {
 		return nil, err
 	}
 
-	return &chord_proto.Node{
-		Address:    addr,
-		Identifier: int64(p.Identifier()),
-	}, nil
+	return serializePeer(node), nil
 }
 
 func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccessorRequest) (*chord_proto.Node, error) {
@@ -74,16 +70,13 @@ func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccesso
 	}
 
 	foundID := p.Identifier()
-	addr, err := getPeerAddress(foundID)
+	node, err := GetPeer(foundID)
 	if err != nil {
-		fmt.Printf("couldn't find peer address %v", err)
+		fmt.Printf("couldn't find peer %v", err)
 		return nil, err
 	}
 
-	return &chord_proto.Node{
-		Identifier: int64(foundID),
-		Address:    addr,
-	}, nil
+	return serializePeer(node), nil
 }
 
 func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_proto.RectifyResponse, error) {
@@ -93,7 +86,7 @@ func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_prot
 	}
 
 	// Definitely validate
-	SetPeerAddress(node.Id, node.Address)
+	SavePeer(node)
 	s.local.Rectify(node)
 
 	return &chord_proto.RectifyResponse{}, nil
@@ -107,17 +100,9 @@ func (s *server) SuccessorList(ctx context.Context, in *chord_proto.SuccessorLis
 		if succ == nil {
 			break
 		}
-		addr, err := getPeerAddress(succ.Identifier())
-		if err != nil {
-			log.Printf("error getting peer address of %v: %v", succ.Identifier(), err)
-			return nil, err
-		}
 
 		response.NumSuccessors++
-		response.Nodes[i] = &chord_proto.Node{
-			Address:    addr,
-			Identifier: int64(succ.Identifier()),
-		}
+		response.Nodes[i] = serializePeer(succ)
 	}
 
 	return response, nil
@@ -150,7 +135,11 @@ func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) 
 	// perhaps some error handling
 	log.Printf("Discovered new peer %v: %v", id, endpointAddress)
 
-	SetPeerAddress(id, endpointAddress)
+	newNode := &RPCNode{
+		Id:      id,
+		Address: endpointAddress,
+	}
+	SavePeer(newNode)
 
 	return &chord_proto.Node{
 		Address:    endpointAddress,
@@ -160,4 +149,24 @@ func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) 
 
 func (s *server) Alive(ctx context.Context, in *chord_proto.LivenessRequest) (*chord_proto.LivenessResponse, error) {
 	return &chord_proto.LivenessResponse{}, nil
+}
+
+func SetExternalAddress(addr string) {
+	externalAddress = addr
+}
+
+func serializePeer(node node) *chord_proto.Node {
+	res := chord_proto.Node{
+		Identifier: int64(node.Identifier()),
+	}
+
+	switch v := node.(type) {
+	case *Node:
+		res.Address = externalAddress
+
+	case *RPCNode:
+		res.Address = v.Address
+	}
+
+	return &res
 }

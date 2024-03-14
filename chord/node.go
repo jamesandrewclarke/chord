@@ -235,11 +235,6 @@ func (n *Node) Rectify(newPredc node) error {
 	pred, _ := n.Predecessor()
 	if pred == nil || between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
 		n.predecessor = newPredc
-	} else {
-		if !newPredc.Alive() {
-			// this line makes no sense
-			//n.predecessor = newPredc
-		}
 	}
 
 	return nil
@@ -301,15 +296,20 @@ func (n *Node) closestPrecedingNode(Id Id) node {
 
 // String returns a basic string representation of the node for debugging purposes
 func (n *Node) String() string {
-	var predecessor Id = -1
+	var predecessor string = "?"
+	var successor string = "?"
 
 	pred, _ := n.Predecessor()
 	if pred != nil {
-		predecessor = pred.Identifier()
+		predecessor = fmt.Sprint(pred.Identifier())
 	}
 
 	succ, _ := n.Successor()
-	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, succ.Identifier())
+	if succ != nil {
+		successor = fmt.Sprint(succ.Identifier())
+	}
+
+	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, successor)
 }
 
 // Alive returns the node's liveness, this is always true for a local node.

@@ -12,7 +12,7 @@ type Id int64
 const m = 64
 
 // The stabilization interval in milliseconds
-const STABILIZE_INTERVAL = 5000
+const STABILIZE_INTERVAL = 2500
 
 type Node struct {
 	id Id
@@ -157,8 +157,8 @@ func (n *Node) stabilize() error {
 	}()
 
 	succ, err := n.Successor()
-	if err != nil {
-		return fmt.Errorf("can't retrieve successor %v: %v", succ.Identifier(), err)
+	if err != nil || succ == nil {
+		return fmt.Errorf("can't stabilize, no successor")
 	}
 
 	succ_pred, err := succ.Predecessor()

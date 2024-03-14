@@ -17,16 +17,22 @@ type RPCNode struct {
 	Address string
 
 	Id Id
+
+	client chord_proto.ChordClient
 }
 
 func (n *RPCNode) getConnection() (chord_proto.ChordClient, error) {
-	conn, err := grpc.Dial(n.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		fmt.Printf("error getting connection: %v\n", err)
-		return nil, err
+	if n.client == nil {
+		conn, err := grpc.Dial(n.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			fmt.Printf("error getting connection: %v\n", err)
+			return nil, err
+		}
+
+		n.client = chord_proto.NewChordClient(conn)
 	}
 
-	return chord_proto.NewChordClient(conn), err
+	return n.client, nil
 }
 
 func (n *RPCNode) Identifier() Id {

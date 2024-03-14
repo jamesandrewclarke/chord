@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 
 	"google.golang.org/grpc"
@@ -131,15 +132,12 @@ func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) 
 	endpointAddress := fmt.Sprintf("[%s]:%d", host, in.Port)
 	id := IdentifierFromAddress(endpointAddress)
 
-	// Update the directory with the new peer
-	// perhaps some error handling
-	log.Printf("Discovered new peer %v: %v", id, endpointAddress)
-
 	newNode := &RPCNode{
 		Id:      id,
 		Address: endpointAddress,
 	}
 	SavePeer(newNode)
+	slog.Info("new peer", "node", newNode)
 
 	return &chord_proto.Node{
 		Address:    endpointAddress,

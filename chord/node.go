@@ -2,7 +2,6 @@ package chord
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"sync"
 	"time"
@@ -110,13 +109,6 @@ func (n *Node) Start() {
 			}
 		}
 	}()
-
-	go func() {
-		for {
-			slog.Info("state", "state", n.String())
-			time.Sleep(3 * time.Second)
-		}
-	}()
 }
 
 func (n *Node) Stop() {
@@ -142,7 +134,6 @@ func (n *Node) Join(p node) error {
 // setSuccessor is a safe wrapper method for setting n's immediate successor
 func (n *Node) setSuccessor(p node) {
 	if p == nil {
-		log.Printf("received setSuccessor for nil")
 		return
 	}
 	n.successorList.SetHead(p)
@@ -160,7 +151,7 @@ func (n *Node) stabilize() error {
 		if succ != nil {
 			err := succ.Rectify(n)
 			if err != nil {
-				fmt.Printf("Error rectifying %v\n", err)
+				slog.Error("failed rectify", "err", err, "successor", succ)
 			}
 		}
 	}()
@@ -193,6 +184,8 @@ func (n *Node) stabilize() error {
 		_ = n.adoptSuccessorList(succ_pred)
 		n.setSuccessor(succ_pred)
 	}
+
+	slog.Info("stabilized", "successor", succ, "predecessor", n.predecessor)
 
 	return nil
 }
@@ -234,6 +227,7 @@ func (n *Node) Rectify(newPredc node) error {
 
 	pred, _ := n.Predecessor()
 	if pred == nil || between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
+		slog.Info("accepted rectify", "remote_node", newPredc)
 		n.predecessor = newPredc
 	}
 
@@ -249,7 +243,7 @@ func (n *Node) fixFingers() {
 
 	succ, err := n.FindSuccessor(n.id + 1<<(n.nextFinger-1))
 	if err != nil {
-		log.Printf("error fetching successor for finger %v", n.nextFinger)
+		slog.Warn("failed finger check", "finger", n.nextFinger, "successor", succ)
 		n.nextFinger++
 		return
 	}

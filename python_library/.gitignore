@@ -1,0 +1,8 @@
+# Python
+venv
+__pycache__
+*.pyc
+
+## Protobuf/gRPC generated code
+*.pyi
+*_pb2*.py

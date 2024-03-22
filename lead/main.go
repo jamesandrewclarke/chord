@@ -3,6 +3,7 @@ package main
 import (
 	"chord/chord"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,7 +21,11 @@ func main() {
 	chord.SetExternalAddress("127.0.0.1:8080")
 
 	go func() {
-		chord.StartServer(node, 8080)
+		lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", 8080))
+		if err != nil {
+			panic("could not start listener")
+		}
+		chord.StartServer(node, lis)
 	}()
 
 	node.Start()

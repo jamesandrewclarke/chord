@@ -19,12 +19,7 @@ type server struct {
 
 var externalAddress string
 
-func StartServer(node node, port int) {
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
+func StartServer(node node, lis net.Listener) {
 	s := grpc.NewServer()
 	chord_proto.RegisterChordServer(s, &server{local: node})
 

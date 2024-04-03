@@ -10,12 +10,17 @@ import (
 func IdentifierFromAddress(addr string) Id {
 	sum := sha256.Sum256([]byte(addr))
 
+	return IdentifierFromBytes(sum[:])
+}
+
+func IdentifierFromBytes(bytes []byte) Id {
 	bigint := new(big.Int)
-	bigint.SetBytes(sum[:])
+	bigint.SetBytes(bytes)
 
 	bigid := new(big.Int)
-	// bigid.Mod(bigint, big.NewInt(1<<(m-1)-1))
-	bigid.Mod(bigint, big.NewInt(1<<11))
+
+	bigid.Mod(bigint, big.NewInt(1<<(m-1)-1))
+	// bigid.Mod(bigint, big.NewInt(1<<11))
 
 	return Id(bigid.Int64())
 }

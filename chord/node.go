@@ -9,7 +9,7 @@ import (
 
 type Id int64
 
-const m = 64
+const m = 20
 
 // The stabilization interval in milliseconds
 const STABILIZE_INTERVAL = 2500
@@ -24,6 +24,7 @@ type Node struct {
 	finger   [m]node
 
 	successorList SuccessorList
+	keys          keystore
 
 	nextFinger int
 
@@ -53,6 +54,8 @@ func CreateNode(Id Id) *Node {
 	n.setSuccessor(n)
 	n.predecessor = n
 	n.nextFinger = 1
+
+	n.keys = CreateKeyStore()
 
 	return n
 }
@@ -102,7 +105,7 @@ func (n *Node) Start() {
 					slog.Warn("disordered successors", "node", n.Identifier())
 				}
 
-				fmt.Println(n.successorList.String())
+				slog.Debug("successor list", "list", n.successorList.String())
 
 			case <-n.shutdown:
 				return

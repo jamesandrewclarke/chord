@@ -2,9 +2,16 @@ FROM golang:1.21 as build
 
 WORKDIR /usr/src/app
 
+RUN apt-get update && apt-get install protobuf-compiler build-essential -y 
+
 # Copy go mod and go sum first
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
+
+# Copy protos
+COPY protos/chord.proto protos/ 
+COPY Makefile .
+RUN make
 
 # Copy source
 COPY chord chord

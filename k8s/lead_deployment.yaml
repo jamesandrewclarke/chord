@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chord-lead
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chord-lead
+  template:
+    metadata:
+      labels:
+        app: chord-lead
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: chord
+        image: chord.azurecr.io/app/peer:ci
+        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)"]
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: EXTERNAL_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP

@@ -12,7 +12,8 @@ type Id int64
 const m = 20
 
 // The stabilization interval in milliseconds
-const STABILIZE_INTERVAL = 2500
+const STABILIZE_INTERVAL = 2500 * time.Millisecond
+const FINGER_INTERVAL = 500 * time.Millisecond
 
 type Node struct {
 	id Id
@@ -82,14 +83,17 @@ func (n *Node) Successor() (node, error) {
 func (n *Node) Start() {
 	n.wg.Add(1)
 	go func() {
-		ticker := time.NewTicker(STABILIZE_INTERVAL * time.Millisecond)
-		defer ticker.Stop()
+		stabilizeTicker := time.NewTicker(STABILIZE_INTERVAL)
+		defer stabilizeTicker.Stop()
+
+		fingerTicker := time.NewTicker(FINGER_INTERVAL)
+		defer fingerTicker.Stop()
 		defer n.wg.Done()
 
 		// TODO Configurable intervals for experiments
 		for {
 			select {
-			case <-ticker.C:
+			case <-stabilizeTicker.C:
 				n.checkPredecessor()
 
 				err := n.stabilize()
@@ -106,6 +110,9 @@ func (n *Node) Start() {
 				}
 
 				slog.Debug("successor list", "list", n.successorList.String())
+
+			case <-fingerTicker.C:
+				n.fixFingers()
 
 			case <-n.shutdown:
 				return

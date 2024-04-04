@@ -12,7 +12,7 @@ type Id int64
 const m = 20
 
 // The stabilization interval in milliseconds
-const STABILIZE_INTERVAL = 2500 * time.Millisecond
+const STABILIZE_INTERVAL = 1000 * time.Millisecond
 const FINGER_INTERVAL = 500 * time.Millisecond
 
 type Node struct {
@@ -100,7 +100,6 @@ func (n *Node) Start() {
 				if err != nil {
 					slog.Error("failed stabilization", "node", n.Identifier(), "err", err)
 				}
-				n.fixFingers()
 				if !n.successorList.UniqueSuccessors() {
 					slog.Warn("duplicate successors", "node", n.Identifier())
 				}

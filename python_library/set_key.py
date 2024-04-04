@@ -6,7 +6,7 @@ import chord_pb2_grpc
 
 import hashlib
 
-m = 20
+m = 64
 
 def lookup(stub, id: int) -> int:
     req = chord_pb2.FindSuccessorRequest(id=int(id))

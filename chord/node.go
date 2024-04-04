@@ -9,7 +9,7 @@ import (
 
 type Id int64
 
-const m = 20
+const m = 64
 
 // The stabilization interval in milliseconds
 const STABILIZE_INTERVAL = 1000 * time.Millisecond

@@ -6,7 +6,7 @@ import (
 )
 
 // TODO Make configurable
-const SUCCESSOR_LIST_SIZE = 3
+const SUCCESSOR_LIST_SIZE = 10
 
 type SuccessorList struct {
 	successors [SUCCESSOR_LIST_SIZE]node

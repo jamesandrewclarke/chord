@@ -30,7 +30,7 @@ permissions:
 
 env:
   LOGIN_SERVER: 'chord.azurecr.io'              # set this to login server for your private container registry (e.g. 'contoso.azurecr.io', 'index.docker.io' )
-  REGISTRY: 'chord'                             # set this to proper value for REGISTRY
+  REGISTRY: 'chord.azurecr.io'                  # set this to proper value for REGISTRY
   NAMESPACE: 'app'                              # set this to proper value for NAMESPACE
   IMAGE: 'peer'                                 # set this to proper value for IMAGE
   TAG: 'ci'                                     # set this to proper value for TAG

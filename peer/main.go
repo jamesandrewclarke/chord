@@ -10,13 +10,14 @@ import (
 	"syscall"
 )
 
-var BOOTSTRAP_ADDRESS = flag.String("addr", "", "The address and port of an existing node to join")
+var EXTERNAL_ADDRESS = flag.String("address", "127.0.0.1", "The address that peers will contact the server on, should be set accordingly for networks behind a NAT")
 
+var BOOTSTRAP_ADDRESS = flag.String("bootstrap", "", "The address and port of a node in an existing Chord ring")
+
+// The default of 0 ensures a random port is assigned by the OS
 var PORT = flag.Int("port", 0, "Port to listen on")
 
-// getListener returns a listener bound to 0.0.0.0 on a random port (unless specified)
 func getListener() net.Listener {
-	// if *PORT is 0, the net library will just assign a port itself
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", *PORT))
 	if err != nil {
 		panic("could not start listener")
@@ -28,29 +29,35 @@ func getListener() net.Listener {
 func main() {
 	flag.Parse()
 
-	lead_id := chord.IdentifierFromAddress(*BOOTSTRAP_ADDRESS)
-	remote := &chord.RPCNode{
-		Address: *BOOTSTRAP_ADDRESS,
-		Id:      lead_id,
-	}
-
-	if BOOTSTRAP_ADDRESS == nil {
-		panic("no bootstrap address provided")
-	}
-
 	lis := getListener()
 	port := lis.Addr().(*net.TCPAddr).Port
-	chord.SetExternalAddress(fmt.Sprintf("127.0.0.1:%v", port))
 
-	id := remote.Announce(port, nil)
-	node := chord.CreateNode(id)
+	addr := fmt.Sprintf("%v:%v", *EXTERNAL_ADDRESS, port)
 
-	chord.SavePeer(node)
-	chord.SavePeer(remote)
+	fmt.Printf("Chord address: %v\n", addr)
+	chord.SetExternalAddress(addr)
 
-	err := node.Join(remote)
-	if err != nil {
-		panic(err)
+	var node *chord.Node
+	if *BOOTSTRAP_ADDRESS != "" {
+		lead_id := chord.IdentifierFromAddress(*BOOTSTRAP_ADDRESS)
+		remote := &chord.RPCNode{
+			Address: *BOOTSTRAP_ADDRESS,
+			Id:      lead_id,
+		}
+		chord.SavePeer(remote)
+
+		id := remote.Announce(port, nil)
+		node = chord.CreateNode(id)
+		chord.SavePeer(node)
+
+		err := node.Join(remote)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		id := chord.IdentifierFromAddress(addr)
+		node = chord.CreateNode(id)
+		chord.SavePeer(node)
 	}
 
 	node.Start()

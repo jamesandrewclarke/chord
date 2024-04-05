@@ -12,6 +12,11 @@ spec:
       labels:
         app: chord-lead
     spec:
+      tolerations:
+      - key: "azure.microsoft.com/spot"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       imagePullSecrets:
       - name: regcred
       containers:
@@ -20,8 +25,11 @@ spec:
         command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)"]
         resources:
           limits:
-            memory: "128Mi"
+            memory: "512Mi"
             cpu: "500m"
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
         ports:
         - containerPort: 8080
         env:

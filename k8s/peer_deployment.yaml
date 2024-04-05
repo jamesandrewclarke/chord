@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: chord-peer
 spec:
-  replicas: 100
+  replicas: 200
   selector:
     matchLabels:
       app: chord-peer
@@ -12,16 +12,24 @@ spec:
       labels:
         app: chord-peer
     spec:
+      tolerations:
+      - key: "kubernetes.azure.com/scalesetpriority"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
       imagePullSecrets:
       - name: regcred
       containers:
       - name: chord
         image: chord.azurecr.io/app/peer:ci
-        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)", "-bootstrap=10.244.3.14:8080"]
+        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)", "-bootstrap=10.244.3.44:8080"]
         resources:
+          requests:
+            memory: "64Mi"
+            cpu: "128m"
           limits:
-            memory: "128Mi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "256m"
         ports:
         - containerPort: 8080
         env:

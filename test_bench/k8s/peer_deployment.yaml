@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: chord-peer
 spec:
-  replicas: 200
+  replicas: 25
   selector:
     matchLabels:
       app: chord-peer
@@ -11,6 +11,7 @@ spec:
     metadata:
       labels:
         app: chord-peer
+        team: chord
     spec:
       tolerations:
       - key: "kubernetes.azure.com/scalesetpriority"
@@ -22,7 +23,7 @@ spec:
       containers:
       - name: chord
         image: chord.azurecr.io/app/peer:ci
-        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)", "-bootstrap=10.244.3.44:8080"]
+        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)", "-bootstrap=10.244.3.71:8080"]
         resources:
           requests:
             memory: "64Mi"
@@ -31,7 +32,11 @@ spec:
             memory: "512Mi"
             cpu: "256m"
         ports:
-        - containerPort: 8080
+        - name: rpc
+          containerPort: 8080
+        - name: metrics
+          containerPort: 2112
+
         env:
         - name: EXTERNAL_IP
           valueFrom:

@@ -11,6 +11,7 @@ spec:
     metadata:
       labels:
         app: chord-lead
+        team: chord
     spec:
       tolerations:
       - key: "azure.microsoft.com/spot"
@@ -22,6 +23,7 @@ spec:
       containers:
       - name: chord
         image: chord.azurecr.io/app/peer:ci
+        imagePullPolicy: Always
         command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)"]
         resources:
           limits:
@@ -31,7 +33,10 @@ spec:
             memory: "128Mi"
             cpu: "250m"
         ports:
-        - containerPort: 8080
+        - name: rpc
+          containerPort: 8080
+        - name: metrics
+          containerPort: 2112
         env:
         - name: EXTERNAL_IP
           valueFrom:

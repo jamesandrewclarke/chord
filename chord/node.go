@@ -96,9 +96,11 @@ func (n *Node) Start() {
 			case <-stabilizeTicker.C:
 				n.checkPredecessor()
 
+				promStabilizeRounds.Inc()
 				err := n.stabilize()
 				if err != nil {
 					slog.Error("failed stabilization", "node", n.Identifier(), "err", err)
+					promStabilizeRoundsFailed.Inc()
 				}
 				if !n.successorList.UniqueSuccessors() {
 					slog.Warn("duplicate successors", "node", n.Identifier())

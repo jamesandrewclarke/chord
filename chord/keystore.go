@@ -4,7 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+var promKeysTotal = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "chord_keys_total",
+	Help: "The total number of keys stored in the node",
+})
 
 type keystore interface {
 	HasKey(Id) bool
@@ -39,6 +47,8 @@ func (k *KeyStore) SetKey(id Id, bytes []byte) error {
 
 	if k.hasKey(id) {
 		slog.Warn("overwriting log entry", "id", id)
+	} else {
+		promKeysTotal.Inc()
 	}
 
 	k.keys[id] = bytes
@@ -70,6 +80,7 @@ func (k *KeyStore) DeleteKey(id Id) error {
 		return fmt.Errorf("could not delete key %v: not found", id)
 	}
 
+	promKeysTotal.Dec()
 	delete(k.keys, id)
 	return nil
 }

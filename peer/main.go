@@ -5,9 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var EXTERNAL_ADDRESS = flag.String("address", "127.0.0.1", "The address that peers will contact the server on, should be set accordingly for networks behind a NAT")
@@ -64,6 +67,12 @@ func main() {
 
 	go func() {
 		chord.StartServer(node, lis)
+	}()
+
+	go func() {
+		// Prometheus for instrumentation
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
 	}()
 
 	c := make(chan os.Signal, 1)

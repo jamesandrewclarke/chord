@@ -3,6 +3,9 @@ package chord
 import (
 	"fmt"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type peerStore struct {
@@ -11,6 +14,11 @@ type peerStore struct {
 }
 
 var store peerStore
+
+var peersStoredTotal = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "chord_cached_peers_total",
+	Help: "The total number of peers saved in the directory",
+})
 
 func init() {
 	store.peerAddresses = make(map[Id]node)
@@ -25,6 +33,8 @@ func SavePeer(node node) {
 	defer store.mu.Unlock()
 	if curr, ok := store.peerAddresses[node.Identifier()]; ok && curr != node {
 		// log.Printf("overwriting peer for %d\n with: %v", node.Identifier(), node.String())
+	} else {
+		peersStoredTotal.Inc()
 	}
 	store.peerAddresses[node.Identifier()] = node
 }

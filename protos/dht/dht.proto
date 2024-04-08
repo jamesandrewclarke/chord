@@ -12,10 +12,19 @@ service DHT {
     rpc TransferKeys(TransferKeyRequest) returns (TransferKeyResponse);
 }
 
-// Empty placeholders in case we need to add parameters in the future
-message GetKeyRequest {};
-message GetKeyResponse {};
-message SetKeyRequest {};
+message GetKeyRequest {
+    int64 key = 1;
+};
+
+message GetKeyResponse {
+    bytes value = 1;
+};
+
+message SetKeyRequest {
+    int64 key = 1;
+    bytes value = 2;
+};
+
 message SetKeyResponse{};
 message TransferKeyRequest{};
 message TransferKeyResponse{};

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"chord/chord"
+	"chord_dht/chord"
 	"fmt"
 )
 

@@ -1,4 +1,4 @@
-module chord
+module chord_dht
 
 go 1.21
 

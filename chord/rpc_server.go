@@ -1,7 +1,7 @@
 package chord
 
 import (
-	chord_proto "chord/protos"
+	chord_proto "chord_dht/protos/chord"
 	"context"
 	"fmt"
 	"log"

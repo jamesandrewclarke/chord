@@ -7,13 +7,27 @@ import (
 	"time"
 )
 
+// Type alias for Chord IDs
 type Id int64
 
+// m is the size of the Chord ring, i.e. the ring is modulo (1<<m)
 const m = 64
 
 // The stabilization interval in milliseconds
 const STABILIZE_INTERVAL = 1000 * time.Millisecond
 const FINGER_INTERVAL = 500 * time.Millisecond
+
+// Abstract interface for a node
+type node interface {
+	Identifier() Id
+	Successor() (node, error)
+	Predecessor() (node, error)
+	FindSuccessor(Id) (node, error)
+	Rectify(node) error
+	SuccessorList() (SuccessorList, error)
+	Alive() bool
+	String() string
+}
 
 type Node struct {
 	id Id
@@ -31,17 +45,6 @@ type Node struct {
 
 	shutdown chan struct{}
 	wg       *sync.WaitGroup
-}
-
-type node interface {
-	Identifier() Id
-	Successor() (node, error)
-	Predecessor() (node, error)
-	FindSuccessor(Id) (node, error)
-	Rectify(node) error
-	SuccessorList() (SuccessorList, error)
-	Alive() bool
-	String() string
 }
 
 // CreateNode initialises a single-node Chord ring

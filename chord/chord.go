@@ -193,7 +193,7 @@ func (n *Node) stabilize() error {
 	}
 
 	succ, _ = n.Successor()
-	if between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
+	if Between(succ_pred.Identifier(), n.Identifier(), succ.Identifier()) {
 		n.successorList.SetHead(succ_pred)
 		_ = n.adoptSuccessorList(succ_pred)
 		n.setSuccessor(succ_pred)
@@ -240,7 +240,7 @@ func (n *Node) Rectify(newPredc node) error {
 	defer n.muPred.Unlock()
 
 	pred, _ := n.Predecessor()
-	if pred == nil || between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
+	if pred == nil || Between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
 		slog.Info("accepted rectify", "remote_node", newPredc)
 		n.predecessor = newPredc
 	}
@@ -276,7 +276,7 @@ func (n *Node) FindSuccessor(Id Id) (node, error) {
 		return nil, fmt.Errorf("could not find a successor as the node's successor is nil")
 	}
 
-	if between(Id, n.Identifier(), succ.Identifier()+1) {
+	if Between(Id, n.Identifier(), succ.Identifier()+1) {
 		return succ, nil
 	}
 
@@ -294,7 +294,7 @@ func (n *Node) closestPrecedingNode(Id Id) node {
 	defer n.muFinger.Unlock()
 
 	for i := m - 1; i >= 0; i-- {
-		if n.finger[i] != nil && between(n.finger[i].Identifier(), n.Identifier(), Id) {
+		if n.finger[i] != nil && Between(n.finger[i].Identifier(), n.Identifier(), Id) {
 			return n.finger[i]
 		}
 	}
@@ -323,17 +323,4 @@ func (n *Node) String() string {
 // Alive returns the node's liveness, this is always true for a local node.
 func (n *Node) Alive() bool {
 	return true
-}
-
-// For handling circular intervals
-func between(id, start, end Id) bool {
-	if start < end {
-		return id > start && id < end
-	}
-
-	return id > start || id < end
-}
-
-func IdBetween(id Id, a, b node) bool {
-	return between(a.Identifier(), b.Identifier(), id)
 }

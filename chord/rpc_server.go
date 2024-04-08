@@ -3,7 +3,6 @@ package chord
 import (
 	chord_proto "chord/protos"
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"log"
 	"log/slog"
@@ -167,8 +166,8 @@ func (s *server) SetKey(ctx context.Context, in *chord_proto.SetKeyRequest) (*ch
 	key := Id(in.Key)
 
 	// Calculate the key ourselves as an integrity check
-	sum := sha256.Sum256(in.Value)
-	keyRecalculated := IdentifierFromBytes(sum[:])
+	hash := Hash(in.Value)
+	keyRecalculated := IdentifierFromBytes(hash)
 	if keyRecalculated != key {
 		msg := fmt.Sprintf("integrity check failed, provided key: %v, actual key: %v", key, keyRecalculated)
 		return nil, status.Error(codes.InvalidArgument, msg)

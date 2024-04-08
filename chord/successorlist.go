@@ -55,7 +55,7 @@ func (s *SuccessorList) Ordered() bool {
 				if s.successors[k] == nil {
 					continue
 				}
-				if !between(s.successors[j].Identifier(), s.successors[i].Identifier(), s.successors[k].Identifier()) {
+				if !Between(s.successors[j].Identifier(), s.successors[i].Identifier(), s.successors[k].Identifier()) {
 					return false
 				}
 			}

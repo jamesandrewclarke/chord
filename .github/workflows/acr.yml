@@ -1,44 +1,24 @@
-# Sample GitHub Actions Workflow
-
-# This workflow will build a container and deploy it to an Azure Functions App on Linux when a commit is pushed to your default branch.
+# Adapted from a sample GitHub Actions Workflow
 #
-# This workflow assumes you have already created the target Azure Functions app.
-# For instructions see https://learn.microsoft.com/en-us/azure/azure-functions/functions-create-function-linux-custom-image?tabs=in-process%2Cbash%2Cazure-cli&pivots=programming-language-csharp
-#
-# To configure this workflow:
-# 1. Set up the following secrets in your repository:
-#   - AZURE_RBAC_CREDENTIALS
-#   - REGISTRY_USERNAME
-#   - REGISTRY_PASSWORD
-# 2. Change env variables for your configuration.
-#
-# For more information on:
-#   - GitHub Actions for Azure: https://github.com/Azure/Actions
-#   - Azure Functions Container Action: https://github.com/Azure/functions-container-action
-#   - Azure Service Principal for RBAC: https://github.com/Azure/functions-action#using-azure-service-principal-for-rbac-as-deployment-credential
-#
-# For more samples to get started with GitHub Action workflows to deploy to Azure: https://github.com/Azure/actions-workflow-samples/tree/master/FunctionApp
-
 name: Build and Push to ACR
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
 
 permissions:
   contents: read
 
 env:
-  LOGIN_SERVER: 'chord.azurecr.io'              # set this to login server for your private container registry (e.g. 'contoso.azurecr.io', 'index.docker.io' )
-  REGISTRY: 'chord.azurecr.io'                  # set this to proper value for REGISTRY
-  NAMESPACE: 'app'                              # set this to proper value for NAMESPACE
-  IMAGE: 'peer'                                 # set this to proper value for IMAGE
-  TAG: 'ci'                                     # set this to proper value for TAG
+  LOGIN_SERVER: 'chord.azurecr.io'
+  REGISTRY: 'chord.azurecr.io'
+  NAMESPACE: 'app'
+  IMAGE: 'peer'
+  TAG: 'ci'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: dev
     steps:
     - name: 'Checkout GitHub Action'
       uses: actions/checkout@v3

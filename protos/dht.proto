@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "go.jclarke.tech/chord/chord_proto";
+
+package chord_proto;
+
+service DHT {
+    rpc GetKey(GetKeyRequest) returns(GetKeyResponse);
+    rpc SetKey(SetKeyRequest) returns (SetKeyResponse);
+    
+    // TODO experiment with streaming?
+    rpc TransferKeys(TransferKeyRequest) returns (TransferKeyResponse);
+}
+
+// Empty placeholders in case we need to add parameters in the future
+message GetKeyRequest {};
+message GetKeyResponse {};
+message SetKeyRequest {};
+message SetKeyResponse{};
+message TransferKeyRequest{};
+message TransferKeyResponse{};

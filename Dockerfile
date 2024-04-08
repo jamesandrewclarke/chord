@@ -9,13 +9,12 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 # Copy protos
-COPY protos/chord.proto protos/ 
+COPY protos protos
 COPY Makefile .
 RUN make
 
 # Copy source
 COPY chord chord
-COPY protos protos
 COPY peer peer
 
 # Compile

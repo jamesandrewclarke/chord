@@ -22,7 +22,7 @@ def identifier_from_bytes(input: bytes) -> int:
 
     return id
 
-def set_key(addr: str, key: int, value: bytes):
+def set_key(addr: str, key: str, value: bytes):
     with grpc.insecure_channel(addr) as channel:
         stub = dht.dht_pb2_grpc.DHTStub(channel)
         req = dht.dht_pb2.SetKeyRequest(key=key, value=value)
@@ -35,7 +35,7 @@ def set_key(addr: str, key: int, value: bytes):
             return res, addr
             
         
-def get_key(addr: str, key: int) -> str:
+def get_key(addr: str, key: str) -> str:
     with grpc.insecure_channel(addr) as channel:
         stub = dht.dht_pb2_grpc.DHTStub(channel)
         req = dht.dht_pb2.GetKeyRequest(key=key)
@@ -45,17 +45,17 @@ def get_key(addr: str, key: int) -> str:
         
 def main():
     if len(sys.argv) < 2:
-        print("Usage: client.py <address> <key>")
+        print("Usage: client.py <address> <key> <value>")
         exit(1)
         
     ENTRY_ADDRESS = f"{sys.argv[1]}:{DHT_PORT}"
-    test_input = " ".join(sys.argv[2:])
 
-    key = test_input.encode("utf-8")
-    id = identifier_from_bytes(key)
+    key = sys.argv[2]
+    test_input = " ".join(sys.argv[3:])
+    value = sys.stdin.buffer.read()
 
-    res, addr = set_key(ENTRY_ADDRESS, id, key)
-    print(get_key(addr, id))
+    res, addr = set_key(ENTRY_ADDRESS, key, value)
+    print(get_key(addr, key))
 
 if __name__ == "__main__":
     main()

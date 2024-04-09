@@ -17,15 +17,16 @@ message Node {
 }
 
 message GetKeyRequest {
-    int64 key = 1;
+    string key = 1;
 };
 
 message GetKeyResponse {
+    string key = 2;
     bytes value = 1;
 };
 
 message SetKeyRequest {
-    int64 key = 1;
+    string key = 1;
     bytes value = 2;
 };
 

@@ -8,9 +8,9 @@ import (
 
 func TestKeyStoreHasKey(t *testing.T) {
 	k := CreateKeyStore()
-	err := k.SetKey(0, []byte("test"))
+	err := k.SetKey("test", []byte("test"))
 
 	assert.Nil(t, err, "expected nil err")
 
-	assert.True(t, k.HasKey(0))
+	assert.True(t, k.HasKey("test"))
 }

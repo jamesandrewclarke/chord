@@ -40,7 +40,7 @@ func StartDHT(node *chord.Node, port int) {
 }
 
 func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_proto.GetKeyResponse, error) {
-	key := chord.Id(in.Key)
+	key := in.Key
 	if !s.keystore.HasKey(key) {
 		return nil, fmt.Errorf("key not found in this node")
 	}
@@ -56,18 +56,11 @@ func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_
 }
 
 func (s *server) SetKey(ctx context.Context, in *dht_proto.SetKeyRequest) (*dht_proto.SetKeyResponse, error) {
-	key := chord.Id(in.Key)
-
-	// Calculate the key ourselves as an integrity check
-	hash := chord.Hash(in.Value)
-	keyRecalculated := chord.IdentifierFromBytes(hash)
-	if keyRecalculated != key {
-		msg := fmt.Sprintf("integrity check failed, provided key: %v, actual key: %v", key, keyRecalculated)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
+	key := in.Key
 
 	// Check if we are actually the successor for this key
-	successor, err := s.node.FindSuccessor(key)
+	chordKey := ChordIdFromString(in.Key)
+	successor, err := s.node.FindSuccessor(chordKey)
 	if err != nil {
 		msg := fmt.Sprintf("key setting failed, could not verify the node's ownership of the key: %v", err)
 		return nil, status.Error(codes.Internal, msg)

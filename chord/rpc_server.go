@@ -9,9 +9,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -144,52 +142,6 @@ func (s *server) Announce(ctx context.Context, in *chord_proto.AnnounceRequest) 
 
 func (s *server) Alive(ctx context.Context, in *chord_proto.LivenessRequest) (*chord_proto.LivenessResponse, error) {
 	return &chord_proto.LivenessResponse{}, nil
-}
-
-func (s *server) Lookup(ctx context.Context, in *chord_proto.LookupRequest) (*chord_proto.LookupResponse, error) {
-	key := Id(in.Key)
-	if !s.local.keys.HasKey(key) {
-		return nil, fmt.Errorf("key not found in this node")
-	}
-
-	value, err := s.local.keys.GetKey(key)
-	if err != nil {
-		return nil, fmt.Errorf("error whilst retrieving key")
-	}
-
-	return &chord_proto.LookupResponse{
-		Value: value,
-	}, nil
-}
-
-func (s *server) SetKey(ctx context.Context, in *chord_proto.SetKeyRequest) (*chord_proto.SetKeyResponse, error) {
-	key := Id(in.Key)
-
-	// Calculate the key ourselves as an integrity check
-	hash := Hash(in.Value)
-	keyRecalculated := IdentifierFromBytes(hash)
-	if keyRecalculated != key {
-		msg := fmt.Sprintf("integrity check failed, provided key: %v, actual key: %v", key, keyRecalculated)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
-	// Check if we are actually the successor for this key
-	successor, err := s.local.FindSuccessor(key)
-	if err != nil {
-		msg := fmt.Sprintf("key setting failed, could not verify the node's ownership of the key: %v", err)
-		return nil, status.Error(codes.Internal, msg)
-	}
-	if successor.Identifier() != s.local.Identifier() {
-		msg := fmt.Sprintf("rejected key, node %v is the successor of the provided key", successor.Identifier())
-		return nil, status.Error(codes.Canceled, msg)
-	}
-
-	err = s.local.keys.SetKey(key, in.Value)
-	if err != nil {
-		return nil, fmt.Errorf("error setting key")
-	}
-
-	return &chord_proto.SetKeyResponse{}, nil
 }
 
 func SetExternalAddress(addr string) {

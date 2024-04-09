@@ -39,7 +39,6 @@ type Node struct {
 	finger   [m]node
 
 	successorList SuccessorList
-	keys          keystore
 
 	nextFinger int
 
@@ -58,8 +57,6 @@ func CreateNode(Id Id) *Node {
 	n.setSuccessor(n)
 	n.predecessor = n
 	n.nextFinger = 1
-
-	n.keys = CreateKeyStore()
 
 	return n
 }

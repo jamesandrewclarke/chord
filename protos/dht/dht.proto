@@ -12,6 +12,10 @@ service DHT {
     rpc TransferKeys(TransferKeyRequest) returns (TransferKeyResponse);
 }
 
+message Node {
+    string address = 1;
+}
+
 message GetKeyRequest {
     int64 key = 1;
 };
@@ -25,6 +29,10 @@ message SetKeyRequest {
     bytes value = 2;
 };
 
-message SetKeyResponse{};
+message SetKeyResponse{
+    // An alternate node, if the node thinks that the request should be forwarded
+    Node forwardNode = 1;
+};
+
 message TransferKeyRequest{};
 message TransferKeyResponse{};

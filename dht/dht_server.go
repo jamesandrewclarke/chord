@@ -73,8 +73,12 @@ func (s *server) SetKey(ctx context.Context, in *dht_proto.SetKeyRequest) (*dht_
 		return nil, status.Error(codes.Internal, msg)
 	}
 	if successor.Identifier() != s.node.Identifier() {
-		msg := fmt.Sprintf("rejected key, node %v is the successor of the provided key", successor.Identifier())
-		return nil, status.Error(codes.Canceled, msg)
+		forwardAddress := stripPort(chord.GetNodeAddress(successor))
+		return &dht_proto.SetKeyResponse{
+			ForwardNode: &dht_proto.Node{
+				Address: forwardAddress,
+			},
+		}, nil
 	}
 
 	err = s.keystore.SetKey(key, in.Value)

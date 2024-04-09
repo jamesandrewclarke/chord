@@ -1,12 +1,20 @@
-# Produce generated Python code for gRPC
-python -m grpc_tools.protoc -I../protos \
-    --python_out=. \
-    --pyi_out=. \
-    --grpc_python_out=. \
-    ../protos/dht/dht.proto
+#!/bin/bash
 
-python -m grpc_tools.protoc -I../protos \
+set -ex
+
+directory=${1-../protos}
+
+# Produce generated Python code for gRPC
+python -m grpc_tools.protoc -I$directory\
+    --proto_path=$directory \
     --python_out=. \
     --pyi_out=. \
     --grpc_python_out=. \
-    ../protos/chord/chord.proto
+    dht/dht.proto \
+
+python -m grpc_tools.protoc -I$directory \
+    --proto_path=$directory \
+    --python_out=. \
+    --pyi_out=. \
+    --grpc_python_out=. \
+    chord/chord.proto \

@@ -3,8 +3,11 @@
 name: Build and Push to ACR
 
 on:
-  push:
-    branches: ['main']
+  workflow_run:
+    workflows: ["Go"]
+    branches: ["main"]
+    types:
+      - completed
 
 permissions:
   contents: read

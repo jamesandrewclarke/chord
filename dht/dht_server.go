@@ -41,8 +41,25 @@ func StartDHT(node *chord.Node, port int) {
 
 func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_proto.GetKeyResponse, error) {
 	key := in.Key
+
 	if !s.keystore.HasKey(key) {
-		return nil, fmt.Errorf("key not found in this node")
+		chordKey := ChordIdFromString(key)
+		successor, err := s.node.FindSuccessor(chordKey)
+		if err != nil {
+			msg := fmt.Sprintf("Our node does not have this key, and we could not find a node to forward to: %v", err)
+			return nil, status.Error(codes.Internal, msg)
+		}
+
+		if successor.Identifier() != s.node.Identifier() {
+			forwardAddress := stripPort(chord.GetNodeAddress(successor))
+			return &dht_proto.GetKeyResponse{
+				ForwardNode: &dht_proto.Node{
+					Address: forwardAddress,
+				},
+			}, nil
+		}
+
+		return nil, status.Error(codes.Internal, "node does not have this key")
 	}
 
 	value, err := s.keystore.GetKey(key)

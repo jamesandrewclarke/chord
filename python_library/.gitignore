@@ -6,3 +6,7 @@ __pycache__
 ## Protobuf/gRPC generated code
 *.pyi
 *_pb2*.py
+
+# Test folders
+inputs
+outputs

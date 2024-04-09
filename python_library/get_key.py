@@ -14,7 +14,7 @@ def main():
         b = dht.get_key(ENTRY_ADDRESS, key)
         sys.stdout.buffer.write(b)
     except Exception as e:
-        print("Error getting key: ", e)
+        sys.stderr.write(f"Error getting key: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

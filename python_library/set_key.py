@@ -17,7 +17,7 @@ def main():
     try:
         dht.set_key(ENTRY_ADDRESS, key, value)
     except Exception as e:
-        print("Error setting key: ", e)
+        sys.stderr.write(f"Error setting key: {e}")
         sys.exit(1)
 
     print(f"Key {key} set successfully")

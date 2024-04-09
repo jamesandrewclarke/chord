@@ -21,8 +21,11 @@ message GetKeyRequest {
 };
 
 message GetKeyResponse {
-    string key = 2;
     bytes value = 1;
+    string key = 2;
+    
+    // An alternate node, if the node thinks that the request should be forwarded
+    Node forwardNode = 3; 
 };
 
 message SetKeyRequest {

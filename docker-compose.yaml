@@ -1,50 +1,63 @@
 services:
-  bootstrap:
-    image: chord.azurecr.io/app/dht:local_james
-    build: .
-    command: -address bootstrap -port 8080
-    expose:
-      - "8080"
-      
+  # A series of peers.
+  # As we are using Docker, we can address other containers with just their service name rather than using plain IP addresses
   peer1:
     image: chord.azurecr.io/app/dht:local_james
     build: .
-    command: -address peer1 -bootstrap bootstrap:8080 -port 8080
+    command: -address peer1 -port 8080
     expose:
       - "8080"
       - "8081"
-    depends_on:
-      - bootstrap
-        
+
   peer2:
     image: chord.azurecr.io/app/dht:local_james
     build: .
-    command: -address peer2 -bootstrap bootstrap:8080 -port 8080
+    command: -address peer2 -bootstrap peer1:8080 -port 8080
     expose:
       - "8080"
       - "8081"
     depends_on:
-      - bootstrap
+      - peer1
 
   peer3:
     image: chord.azurecr.io/app/dht:local_james
     build: .
-    command: -address peer3 -bootstrap bootstrap:8080 -port 8080
+    command: -address peer3 -bootstrap peer2:8080 -port 8080
     expose:
       - "8080"
       - "8081"
     depends_on:
-      - bootstrap
+      - peer2
         
   peer4:
     image: chord.azurecr.io/app/dht:local_james
     build: .
-    command: -address peer4 -bootstrap bootstrap:8080 -port 8080
+    command: -address peer4 -bootstrap peer3:8080 -port 8080
     expose:
       - "8080"
       - "8081"
     depends_on:
-      - bootstrap
+      - peer3
+        
+  peer5:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer5 -bootstrap peer4:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - peer4
+        
+  peer6:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer6 -bootstrap peer5:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - peer5
         
   # Test container which mounts our Python scripts, allows us to make use of Docker networking
   python:

@@ -167,10 +167,12 @@ func (n *Node) stabilize() error {
 		}
 	}()
 
+	var succStart node
 	succ, err := n.Successor()
 	if err != nil || succ == nil {
 		return fmt.Errorf("can't stabilize, no successor")
 	}
+	succStart = succ
 
 	succ_pred, err := succ.Predecessor()
 	if err != nil {
@@ -196,7 +198,10 @@ func (n *Node) stabilize() error {
 		n.setSuccessor(succ_pred)
 	}
 
-	slog.Info("stabilized", "successor", succ, "predecessor", n.predecessor)
+	succ, _ = n.Successor()
+	if succ != succStart {
+		slog.Info("new successor", "successor", succ)
+	}
 
 	return nil
 }

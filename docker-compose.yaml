@@ -1,15 +1,50 @@
 services:
   bootstrap:
-    image: chord.azurecr.io/app/peer:ci
-    network_mode: host
-    command: -address 127.0.0.1 -port 8080
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address bootstrap -port 8080
+    expose:
+      - "8080"
       
-  peer:
-    image: chord.azurecr.io/app/peer:ci
-    deploy:
-      mode: replicated
-      replicas: 25
-    network_mode: host
-    command: -bootstrap 127.0.0.1:8080
+  peer1:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer1 -bootstrap bootstrap:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - bootstrap
+        
+  peer2:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer2 -bootstrap bootstrap:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - bootstrap
+
+  peer3:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer3 -bootstrap bootstrap:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - bootstrap
+        
+  peer4:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer4 -bootstrap bootstrap:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - bootstrap
+        
     depends_on:
       - bootstrap

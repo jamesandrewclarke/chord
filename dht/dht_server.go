@@ -5,16 +5,38 @@ import (
 	dht_proto "chord_dht/protos/dht"
 	"context"
 	"fmt"
+	"log"
+	"net"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type server struct {
-	node chord.Node
+	node *chord.Node
 
 	keystore keystore
 	dht_proto.UnimplementedDHTServer
+}
+
+func StartDHT(node *chord.Node, port int) {
+	s := grpc.NewServer()
+	dht_proto.RegisterDHTServer(s, &server{
+		node:     node,
+		keystore: CreateKeyStore(),
+	})
+
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", port))
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("DHT server listening at %v", lis.Addr())
+	if err := s.Serve(lis); err != nil {
+		panic(err)
+	}
+
 }
 
 func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_proto.GetKeyResponse, error) {

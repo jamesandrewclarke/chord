@@ -14,3 +14,15 @@ func TestKeyStoreHasKey(t *testing.T) {
 
 	assert.True(t, k.HasKey("test"))
 }
+
+func TestKeyStoreReturnsCorrectKey(t *testing.T) {
+	k := CreateKeyStore()
+
+	err := k.SetKey("test", []byte("Hello, World!"))
+
+	assert.Nil(t, err, "expected nil err")
+
+	value, err := k.GetKey("test")
+	assert.Nil(t, err, "expected nil err")
+	assert.Equal(t, []byte("Hello, World!"), value)
+}

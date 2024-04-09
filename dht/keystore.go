@@ -21,16 +21,29 @@ type keystore interface {
 	DeleteKey(string) error
 }
 
+type keyentry struct {
+	key   string
+	Value []byte
+
+	sync.RWMutex
+}
+
 type KeyStore struct {
 	muKeys sync.RWMutex
-	keys   map[string][]byte
+	keys   map[string]*keyentry
 }
 
 func CreateKeyStore() *KeyStore {
 	ks := &KeyStore{}
-	ks.keys = make(map[string][]byte)
+	ks.keys = make(map[string]*keyentry)
 
 	return ks
+}
+
+func createKeyEntry(key string) *keyentry {
+	k := &keyentry{}
+	k.key = key
+	return k
 }
 
 func (k *KeyStore) HasKey(key string) bool {
@@ -49,9 +62,14 @@ func (k *KeyStore) SetKey(key string, bytes []byte) error {
 		slog.Warn("overwriting log entry", "key", key)
 	} else {
 		promKeysTotal.Inc()
+		k.keys[key] = createKeyEntry(key)
 	}
 
-	k.keys[key] = bytes
+	entry := k.keys[key]
+	entry.Lock()
+	defer entry.Unlock()
+	entry.Value = bytes
+
 	return nil
 }
 
@@ -68,8 +86,11 @@ func (k *KeyStore) GetKey(key string) ([]byte, error) {
 	if !k.hasKey(key) {
 		return nil, fmt.Errorf("key %v not found", key)
 	}
+	entry := k.keys[key]
+	entry.Lock()
+	defer entry.Unlock()
 
-	return k.keys[key], nil
+	return entry.Value, nil
 }
 
 func (k *KeyStore) DeleteKey(key string) error {
@@ -80,7 +101,11 @@ func (k *KeyStore) DeleteKey(key string) error {
 		return fmt.Errorf("could not delete key %v: not found", key)
 	}
 
-	promKeysTotal.Dec()
+	entry := k.keys[key]
+	entry.Lock()
+	defer entry.Unlock()
 	delete(k.keys, key)
+
+	promKeysTotal.Dec()
 	return nil
 }

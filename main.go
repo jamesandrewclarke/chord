@@ -23,14 +23,14 @@ func main() {
 	flag.Parse()
 
 	config := chord.BootstrapConfig{
-		ExternalAddr:  "127.0.0.1",
+		ExternalAddr:  *EXTERNAL_ADDRESS,
 		BootstrapAddr: *BOOTSTRAP_ADDRESS,
 		Port:          *PORT,
 	}
 	node := chord.Bootstrap(config)
 
 	go func() {
-		dht.StartDHT(node, 0)
+		dht.StartDHT(node, 8081)
 	}()
 
 	go func() {

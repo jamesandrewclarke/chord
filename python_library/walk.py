@@ -19,6 +19,7 @@ def main():
     with grpc.insecure_channel(address) as channel:
         stub = chord.chord_pb2_grpc.ChordStub(channel)
         
+        print("Starting lookup...")
         first = lookup(stub, 0)
         count = 0
         nodes = set()
@@ -33,8 +34,8 @@ def main():
                 break
             id = result 
             
-        print(count)
-        print(nodes)
+        print()
+        print(f"Total nodes: {count}")
 
 if __name__ == "__main__":
     main()

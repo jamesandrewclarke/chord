@@ -15,10 +15,11 @@ RUN make
 
 # Copy source
 COPY chord chord
-COPY peer peer
+COPY dht dht
+COPY main.go .
 
 # Compile
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o /usr/local/bin/app ./peer
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o /usr/local/bin/app . 
 
 # Final result is a bare container with just the binary, results in a much smaller image
 FROM scratch

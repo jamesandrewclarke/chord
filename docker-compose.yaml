@@ -47,8 +47,8 @@ services:
       - bootstrap
         
   # Test container which mounts our Python scripts, allows us to make use of Docker networking
-  test:
-    image: chord.azure.cr.io/app/python_test:local_james
+  python:
+    image: chord.azure.cr.io/app/python:local_james
     stdin_open: true
     tty: true
     build:
@@ -56,5 +56,3 @@ services:
       dockerfile: python_library/Dockerfile
     volumes:
       - ./python_library:/opt/app
-    depends_on:
-      - bootstrap

@@ -1,2 +1,0 @@
-#!/bin/bash
-docker exec chord-test-1 python "$@"

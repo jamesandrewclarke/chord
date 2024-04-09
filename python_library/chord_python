@@ -1,0 +1,2 @@
+#!/bin/bash
+docker exec -i chord-python-1 python "$@"

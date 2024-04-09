@@ -9,8 +9,8 @@ import (
 )
 
 type peerStore struct {
-	mu            sync.Mutex
-	peerAddresses map[Id]node
+	mu    sync.Mutex
+	peers map[Id]node
 }
 
 var store peerStore
@@ -21,7 +21,7 @@ var peersStoredTotal = promauto.NewGauge(prometheus.GaugeOpts{
 })
 
 func init() {
-	store.peerAddresses = make(map[Id]node)
+	store.peers = make(map[Id]node)
 }
 
 func SavePeer(node node) {
@@ -31,20 +31,30 @@ func SavePeer(node node) {
 	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
-	if curr, ok := store.peerAddresses[node.Identifier()]; ok && curr != node {
+	if curr, ok := store.peers[node.Identifier()]; ok && curr != node {
 		// log.Printf("overwriting peer for %d\n with: %v", node.Identifier(), node.String())
 	} else {
 		peersStoredTotal.Inc()
 	}
-	store.peerAddresses[node.Identifier()] = node
+	store.peers[node.Identifier()] = node
 }
 
 func GetPeer(id Id) (node, error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
-	if node, ok := store.peerAddresses[id]; ok {
+	if node, ok := store.peers[id]; ok {
 		return node, nil
 	}
 
 	return nil, fmt.Errorf("peer %v not fonud in directory", id)
+}
+
+// GetNodeAddress returns an address compatible with net.Dial for a given node,
+// if the node is non-remote (i.e. a local node), an empty string is returned
+func GetNodeAddress(node node) string {
+	if rnode, ok := node.(*RPCNode); ok {
+		return rnode.Address
+	} else {
+		return ""
+	}
 }

@@ -29,8 +29,9 @@ func main() {
 	}
 	node := chord.Bootstrap(config)
 
+	var server *dht.Server
 	go func() {
-		dht.StartDHT(node, 8081)
+		server = dht.StartDHT(node, 8081)
 	}()
 
 	go func() {
@@ -43,5 +44,5 @@ func main() {
 
 	<-c
 	fmt.Println("Exiting...")
-	node.Stop()
+	server.Stop()
 }

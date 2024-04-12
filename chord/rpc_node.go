@@ -200,5 +200,5 @@ func (n *RPCNode) String() string {
 		addr = n.Address
 	}
 
-	return fmt.Sprintf("id = %v, address = %v", n.Identifier(), addr)
+	return fmt.Sprintf("RPCNode(id = %v, address = %v)", n.Identifier(), addr)
 }

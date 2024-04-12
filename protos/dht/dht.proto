@@ -7,9 +7,6 @@ package dht_proto;
 service DHT {
     rpc GetKey(GetKeyRequest) returns(GetKeyResponse);
     rpc SetKey(SetKeyRequest) returns (SetKeyResponse);
-    
-    // TODO experiment with streaming?
-    rpc TransferKeys(TransferKeyRequest) returns (TransferKeyResponse);
 }
 
 message Node {
@@ -31,12 +28,12 @@ message GetKeyResponse {
 message SetKeyRequest {
     string key = 1;
     bytes value = 2;
+
+    // Transfer is for use when exiting the network, prevents redirections
+    bool transfer = 3;
 };
 
 message SetKeyResponse{
     // An alternate node, if the node thinks that the request should be forwarded
     Node forwardNode = 1;
 };
-
-message TransferKeyRequest{};
-message TransferKeyResponse{};

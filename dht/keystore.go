@@ -59,6 +59,7 @@ func (k *KeyStore) HasKey(key string) bool {
 
 func (k *KeyStore) SetKey(key string, bytes []byte) error {
 	k.muKeys.Lock()
+
 	defer k.muKeys.Unlock()
 
 	if k.hasKey(key) {
@@ -69,6 +70,7 @@ func (k *KeyStore) SetKey(key string, bytes []byte) error {
 	}
 
 	entry := k.Keys[key]
+
 	entry.Lock()
 	defer entry.Unlock()
 	entry.Value = bytes

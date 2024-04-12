@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -14,19 +15,24 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type server struct {
+type Server struct {
 	node *chord.Node
+
+	shutdown chan struct{}
+	wg       *sync.WaitGroup
 
 	keystore *KeyStore
 	dht_proto.UnimplementedDHTServer
 }
 
-func StartDHT(node *chord.Node, port int) {
+func StartDHT(node *chord.Node, port int) *Server {
 	s := grpc.NewServer()
 
-	dht := &server{
+	dht := &Server{
 		node:     node,
 		keystore: CreateKeyStore(),
+		shutdown: make(chan struct{}),
+		wg:       new(sync.WaitGroup),
 	}
 
 	dht_proto.RegisterDHTServer(s, dht)
@@ -36,7 +42,9 @@ func StartDHT(node *chord.Node, port int) {
 		panic(err)
 	}
 
+	dht.wg.Add(1)
 	go func() {
+		defer dht.wg.Done()
 		// TODO graceful shutdown for this
 		keyCheckTicker := time.NewTicker(3 * time.Second)
 		defer keyCheckTicker.Stop()
@@ -45,21 +53,40 @@ func StartDHT(node *chord.Node, port int) {
 			select {
 			case <-keyCheckTicker.C:
 				dht.CheckKeys()
+
+			case <-dht.shutdown:
+				fmt.Println("Stopping...")
+				node.Stop()
+
+				succ, _ := node.Successor()
+				if succ != nil && succ != node {
+					fmt.Printf("Transferring keys to %v\n", succ)
+					addr := fmt.Sprintf("%v:%v", stripPort(chord.GetNodeAddress(succ)), DHT_PORT)
+					TransferKeys(addr, dht.keystore)
+				}
+				return
 			}
 		}
 	}()
 
-	log.Printf("DHT server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		panic(err)
-	}
+	go func() {
+		log.Printf("DHT server listening at %v", lis.Addr())
+		if err := s.Serve(lis); err != nil {
+			panic(err)
+		}
+	}()
 
+	return dht
 }
 
-func (s *server) CheckKeys() {
-	s.keystore.muKeys.RLock()
-	defer s.keystore.muKeys.RUnlock()
+func (s *Server) Stop() {
+	fmt.Println("Starting DHT graceful shutdown...")
+	close(s.shutdown)
+	s.wg.Wait()
+	fmt.Println("Done")
+}
 
+func (s *Server) CheckKeys() {
 	for _, v := range s.keystore.Keys {
 		v.RLock()
 
@@ -79,11 +106,11 @@ func (s *server) CheckKeys() {
 
 		fmt.Printf("Transferring key: %v\n", v.Id)
 		predAddr := fmt.Sprintf("%v:%v", stripPort(chord.GetNodeAddress(pred)), DHT_PORT)
-		err = SetKey(predAddr, v.Key, v.Value)
+		err = SetKey(predAddr, v.Key, v.Value, true)
 		v.RUnlock()
 
 		if err != nil {
-			fmt.Println("error transferring key...")
+			fmt.Printf("error transferring key... %v", err)
 		} else {
 			fmt.Println("successfully transferred key, deleting...")
 			s.keystore.DeleteKey(v.Key)
@@ -92,8 +119,10 @@ func (s *server) CheckKeys() {
 	}
 }
 
-func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_proto.GetKeyResponse, error) {
+func (s *Server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_proto.GetKeyResponse, error) {
 	key := in.Key
+
+	fmt.Printf("Received GetKey for %v\n", key)
 
 	if !s.keystore.HasKey(key) {
 		chordKey := ChordIdFromString(key)
@@ -125,26 +154,30 @@ func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_
 	}, nil
 }
 
-func (s *server) SetKey(ctx context.Context, in *dht_proto.SetKeyRequest) (*dht_proto.SetKeyResponse, error) {
+func (s *Server) SetKey(ctx context.Context, in *dht_proto.SetKeyRequest) (*dht_proto.SetKeyResponse, error) {
 	key := in.Key
 
+	fmt.Printf("Received SetKey for %v\n", key)
 	// Check if we are actually the successor for this key
 	chordKey := ChordIdFromString(in.Key)
-	successor, err := s.node.FindSuccessor(chordKey)
-	if err != nil {
-		msg := fmt.Sprintf("key setting failed, could not verify the node's ownership of the key: %v", err)
-		return nil, status.Error(codes.Internal, msg)
-	}
-	if successor.Identifier() != s.node.Identifier() {
-		forwardAddress := stripPort(chord.GetNodeAddress(successor))
-		return &dht_proto.SetKeyResponse{
-			ForwardNode: &dht_proto.Node{
-				Address: forwardAddress,
-			},
-		}, nil
+	if !in.Transfer {
+		successor, err := s.node.FindSuccessor(chordKey)
+
+		if err != nil {
+			msg := fmt.Sprintf("key setting failed, could not verify the node's ownership of the key: %v", err)
+			return nil, status.Error(codes.Internal, msg)
+		}
+		if successor.Identifier() != s.node.Identifier() {
+			forwardAddress := stripPort(chord.GetNodeAddress(successor))
+			return &dht_proto.SetKeyResponse{
+				ForwardNode: &dht_proto.Node{
+					Address: forwardAddress,
+				},
+			}, nil
+		}
 	}
 
-	err = s.keystore.SetKey(key, in.Value)
+	err := s.keystore.SetKey(key, in.Value)
 	if err != nil {
 		return nil, fmt.Errorf("error setting key")
 	}

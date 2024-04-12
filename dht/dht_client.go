@@ -23,19 +23,20 @@ func getClient(address string) (dht_proto.DHTClient, error) {
 	return client, nil
 }
 
-func SetKey(address string, key string, value []byte) error {
+func SetKey(address string, key string, value []byte, transfer bool) error {
 	fmt.Printf("setting on: %v\n", address)
 	client, err := getClient(address)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	res, err := client.SetKey(ctx, &dht_proto.SetKeyRequest{
-		Key:   key,
-		Value: value,
+		Key:      key,
+		Value:    value,
+		Transfer: transfer,
 	})
 
 	if err != nil {
@@ -43,10 +44,25 @@ func SetKey(address string, key string, value []byte) error {
 		return err
 	}
 
-	if res.ForwardNode != nil {
+	if !transfer && res.ForwardNode != nil {
 		forwardAddr := fmt.Sprintf("%v:%v", res.ForwardNode.Address, DHT_PORT)
-		return SetKey(forwardAddr, key, value)
+		return SetKey(forwardAddr, key, value, transfer)
 	}
 
 	return nil
+}
+
+func TransferKeys(address string, keys *KeyStore) {
+	keys.muKeys.Lock()
+	defer keys.muKeys.Unlock()
+
+	for _, v := range keys.Keys {
+		v.RLock()
+		defer v.RUnlock()
+
+		err := SetKey(address, v.Key, v.Value, true)
+		if err != nil {
+			fmt.Printf("Error transferring key: %v\n", err)
+		}
+	}
 }

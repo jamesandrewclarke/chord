@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -16,27 +17,79 @@ import (
 type server struct {
 	node *chord.Node
 
-	keystore keystore
+	keystore *KeyStore
 	dht_proto.UnimplementedDHTServer
 }
 
 func StartDHT(node *chord.Node, port int) {
 	s := grpc.NewServer()
-	dht_proto.RegisterDHTServer(s, &server{
+
+	dht := &server{
 		node:     node,
 		keystore: CreateKeyStore(),
-	})
+	}
+
+	dht_proto.RegisterDHTServer(s, dht)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", port))
 	if err != nil {
 		panic(err)
 	}
 
+	go func() {
+		// TODO graceful shutdown for this
+		keyCheckTicker := time.NewTicker(3 * time.Second)
+		defer keyCheckTicker.Stop()
+
+		for {
+			select {
+			case <-keyCheckTicker.C:
+				dht.CheckKeys()
+			}
+		}
+	}()
+
 	log.Printf("DHT server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		panic(err)
 	}
 
+}
+
+func (s *server) CheckKeys() {
+	s.keystore.muKeys.RLock()
+	defer s.keystore.muKeys.RUnlock()
+
+	for _, v := range s.keystore.Keys {
+		v.RLock()
+
+		// First check if the key is between the current predecessor
+		// and us, if it is, then continue
+		pred, err := s.node.Predecessor()
+		if err != nil {
+			fmt.Println("key check failed, no predecessor")
+			v.RUnlock()
+			continue
+		}
+
+		if chord.Between(v.Id, pred.Identifier()+1, s.node.Identifier()) {
+			v.RUnlock()
+			continue
+		}
+
+		fmt.Printf("Transferring key: %v\n", v.Id)
+		predAddr := fmt.Sprintf("%v:%v", stripPort(chord.GetNodeAddress(pred)), DHT_PORT)
+		err = SetKey(predAddr, v.Key, v.Value)
+		v.RUnlock()
+
+		if err != nil {
+			fmt.Println("error transferring key...")
+		} else {
+			fmt.Println("successfully transferred key, deleting...")
+			s.keystore.DeleteKey(v.Key)
+			fmt.Println("deleted")
+		}
+	}
 }
 
 func (s *server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_proto.GetKeyResponse, error) {

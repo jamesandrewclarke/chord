@@ -99,6 +99,18 @@ func IdentifierFromBytes(bytes []byte) Id {
 	return Id(bigid.Int64())
 }
 
+// IsSuccessor returns if a node considers an Id under its jurisdiction
+func IsSuccessor(node node, id Id) (bool, error) {
+	pred, _ := node.Predecessor()
+	succ, _ := node.Successor()
+
+	if pred == nil || succ == nil {
+		return false, fmt.Errorf("could not determine if id %v is successor", id)
+	}
+
+	return NodesBetween(id, pred, succ), nil
+}
+
 // Between returns true if id is in the range [start, end] on the Chord ring
 func Between(id, start, end Id) bool {
 	if start < end {

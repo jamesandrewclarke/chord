@@ -1,6 +1,7 @@
 package dht
 
 import (
+	"chord_dht/chord"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -22,27 +23,29 @@ type keystore interface {
 }
 
 type keyentry struct {
-	key   string
+	Key   string
 	Value []byte
+	Id    chord.Id
 
 	sync.RWMutex
 }
 
 type KeyStore struct {
 	muKeys sync.RWMutex
-	keys   map[string]*keyentry
+	Keys   map[string]*keyentry
 }
 
 func CreateKeyStore() *KeyStore {
 	ks := &KeyStore{}
-	ks.keys = make(map[string]*keyentry)
+	ks.Keys = make(map[string]*keyentry)
 
 	return ks
 }
 
 func createKeyEntry(key string) *keyentry {
 	k := &keyentry{}
-	k.key = key
+	k.Key = key
+	k.Id = ChordIdFromString(key)
 	return k
 }
 
@@ -50,7 +53,7 @@ func (k *KeyStore) HasKey(key string) bool {
 	k.muKeys.RLock()
 	defer k.muKeys.RUnlock()
 
-	_, ok := k.keys[key]
+	_, ok := k.Keys[key]
 	return ok
 }
 
@@ -62,10 +65,10 @@ func (k *KeyStore) SetKey(key string, bytes []byte) error {
 		slog.Warn("overwriting log entry", "key", key)
 	} else {
 		promKeysTotal.Inc()
-		k.keys[key] = createKeyEntry(key)
+		k.Keys[key] = createKeyEntry(key)
 	}
 
-	entry := k.keys[key]
+	entry := k.Keys[key]
 	entry.Lock()
 	defer entry.Unlock()
 	entry.Value = bytes
@@ -75,7 +78,7 @@ func (k *KeyStore) SetKey(key string, bytes []byte) error {
 
 // hasKey is the non-threadsafe version of HasKey for internal use only
 func (k *KeyStore) hasKey(key string) bool {
-	_, ok := k.keys[key]
+	_, ok := k.Keys[key]
 	return ok
 }
 
@@ -86,7 +89,7 @@ func (k *KeyStore) GetKey(key string) ([]byte, error) {
 	if !k.hasKey(key) {
 		return nil, fmt.Errorf("key %v not found", key)
 	}
-	entry := k.keys[key]
+	entry := k.Keys[key]
 	entry.Lock()
 	defer entry.Unlock()
 
@@ -101,10 +104,10 @@ func (k *KeyStore) DeleteKey(key string) error {
 		return fmt.Errorf("could not delete key %v: not found", key)
 	}
 
-	entry := k.keys[key]
+	entry := k.Keys[key]
 	entry.Lock()
 	defer entry.Unlock()
-	delete(k.keys, key)
+	delete(k.Keys, key)
 
 	promKeysTotal.Dec()
 	return nil

@@ -5,15 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
-
-var promKeysTotal = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "dht_keys_total",
-	Help: "The total number of keys stored in the node",
-})
 
 type keystore interface {
 	HasKey(string) bool
@@ -75,6 +67,7 @@ func (k *KeyStore) SetKey(key string, bytes []byte) error {
 	defer entry.Unlock()
 	entry.Value = bytes
 
+	promSetKeysTotal.Inc()
 	return nil
 }
 
@@ -95,6 +88,7 @@ func (k *KeyStore) GetKey(key string) ([]byte, error) {
 	entry.Lock()
 	defer entry.Unlock()
 
+	promGetKeysTotal.Inc()
 	return entry.Value, nil
 }
 
@@ -112,5 +106,6 @@ func (k *KeyStore) DeleteKey(key string) error {
 	delete(k.Keys, key)
 
 	promKeysTotal.Dec()
+	promDeleteKeysTotal.Inc()
 	return nil
 }

@@ -14,3 +14,8 @@ var promStabilizeRoundsFailed = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "chord_stabilize_failed_rounds_total",
 	Help: "Count of failed stabilization rounds",
 })
+
+var promRectifies = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "chord_rectifies_total",
+	Help: "Count of successful rectifications",
+})

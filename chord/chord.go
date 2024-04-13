@@ -261,6 +261,8 @@ func (n *Node) Rectify(newPredc node) error {
 	if pred == nil || Between(newPredc.Identifier(), pred.Identifier(), n.Identifier()) {
 		slog.Info("accepted rectify", "remote_node", newPredc)
 		n.predecessor = newPredc
+
+		promRectifies.Inc()
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	dht_proto "chord_dht/protos/dht"
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -56,13 +57,19 @@ func TransferKeys(address string, keys *KeyStore) {
 	keys.muKeys.Lock()
 	defer keys.muKeys.Unlock()
 
+	var wg sync.WaitGroup
 	for _, v := range keys.Keys {
-		v.RLock()
-		defer v.RUnlock()
+		wg.Add(1)
+		go func(v *keyentry) {
+			v.RLock()
+			defer v.RUnlock()
 
-		err := SetKey(address, v.Key, v.Value, true)
-		if err != nil {
-			fmt.Printf("Error transferring key: %v\n", err)
-		}
+			err := SetKey(address, v.Key, v.Value, true)
+			if err != nil {
+				fmt.Printf("Error transferring key: %v\n", err)
+			}
+			wg.Done()
+		}(v)
 	}
+	wg.Wait()
 }

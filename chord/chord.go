@@ -72,13 +72,27 @@ type ChordConfig struct {
 // CreateNode initialises a single-node Chord ring
 func CreateNode(Id Id) *Node {
 	n := &Node{
-		id:               Id,
-		shutdown:         make(chan struct{}),
-		wg:               new(sync.WaitGroup),
-		successorList:    CreateSuccessorList(10),
-		operationCount:   prometheus.NewCounterVec(operationsCounter, operationsCounterLabels),
-		successorGauge:   prometheus.NewGauge(successorGauge),
-		predecessorGauge: prometheus.NewGauge(predecessorGauge),
+		id:            Id,
+		shutdown:      make(chan struct{}),
+		wg:            new(sync.WaitGroup),
+		successorList: CreateSuccessorList(10),
+
+		operationCount: prometheus.NewCounterVec(operationsCounter, operationsCounterLabels),
+
+		successorGauge: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "chord_successor",
+			Help: "The successor of the node",
+			ConstLabels: prometheus.Labels{
+				"id": fmt.Sprint(Id),
+			},
+		}),
+		predecessorGauge: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "chord_predecessor",
+			Help: "The predecessor of the node",
+			ConstLabels: prometheus.Labels{
+				"id": fmt.Sprint(Id),
+			},
+		}),
 	}
 
 	n.setSuccessor(n)

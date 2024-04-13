@@ -3,18 +3,40 @@ package chord
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // TODO Make configurable
-const SUCCESSOR_LIST_SIZE = 10
 
 type SuccessorList struct {
-	successors [SUCCESSOR_LIST_SIZE]node
+	successors []node
+	size       int
+
+	sync.Mutex
+}
+
+func CreateSuccessorList(size int) *SuccessorList {
+	return &SuccessorList{
+		successors: make([]node, size),
+		size:       size,
+	}
 }
 
 // Adopt copies all values from another successor list but retains the head
-func (s *SuccessorList) Adopt(t SuccessorList) {
-	for i := 0; i < SUCCESSOR_LIST_SIZE-1; i++ {
+func (s *SuccessorList) Adopt(t *SuccessorList) {
+	if t == nil || s == nil {
+		fmt.Println("Called Adopt with a nil successor, exiting")
+		return
+	}
+
+	s.Lock()
+	defer s.Unlock()
+
+	// Could this cause a deadlock?
+	t.Lock()
+	defer t.Unlock()
+
+	for i := 0; i < s.size-1; i++ {
 		s.successors[i+1] = t.successors[i]
 	}
 }
@@ -26,15 +48,20 @@ func (s *SuccessorList) Head() node {
 
 // Removes the first element of the list
 func (s *SuccessorList) PopHead() {
+	s.Lock()
+	defer s.Unlock()
+
 	// Shifts all elements back one place
-	for i := 1; i < SUCCESSOR_LIST_SIZE; i++ {
+	for i := 1; i < s.size; i++ {
 		s.successors[i-1] = s.successors[i]
 	}
-	s.successors[SUCCESSOR_LIST_SIZE-1] = nil
+	s.successors[s.size-1] = nil
 }
 
 // SetHead sets the immediate successor
 func (s *SuccessorList) SetHead(p node) {
+	s.Lock()
+	defer s.Unlock()
 	s.successors[0] = p
 }
 
@@ -43,15 +70,17 @@ func (s *SuccessorList) SetHead(p node) {
 func (s *SuccessorList) Ordered() bool {
 	// TODO Could be better than O(r^3)?
 	// Exhaustive check for now just to be sure
-	for i := 0; i < SUCCESSOR_LIST_SIZE-2; i++ {
+
+	// Not bothered about acquiring locks here
+	for i := 0; i < s.size-2; i++ {
 		if s.successors[i] == nil {
 			continue
 		}
-		for j := i + 1; j < SUCCESSOR_LIST_SIZE-1; j++ {
+		for j := i + 1; j < s.size-1; j++ {
 			if s.successors[j] == nil {
 				continue
 			}
-			for k := j + 1; k < SUCCESSOR_LIST_SIZE; k++ {
+			for k := j + 1; k < s.size; k++ {
 				if s.successors[k] == nil {
 					continue
 				}

@@ -91,15 +91,16 @@ func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_prot
 func (s *server) SuccessorList(ctx context.Context, in *chord_proto.SuccessorListRequest) (*chord_proto.SuccessorListResponse, error) {
 	succ_list, _ := s.local.SuccessorList()
 	response := &chord_proto.SuccessorListResponse{}
-	response.Nodes = make([]*chord_proto.Node, SUCCESSOR_LIST_SIZE)
+	response.Nodes = make([]*chord_proto.Node, s.local.successorList.size)
 	for i, succ := range succ_list.successors {
 		if succ == nil {
 			break
 		}
 
-		response.NumSuccessors++
 		response.Nodes[i] = serializePeer(succ)
 	}
+
+	response.NumSuccessors = int32(s.local.successorList.size)
 
 	return response, nil
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestHeadReturnsCorrectNode(t *testing.T) {
-	s := SuccessorList{}
+	s := CreateSuccessorList(10)
 	n := CreateNode(1)
 
 	s.SetHead(n)
@@ -16,7 +16,7 @@ func TestHeadReturnsCorrectNode(t *testing.T) {
 }
 
 func TestPopHeadRemovesCorrectNode(t *testing.T) {
-	s := SuccessorList{}
+	s := CreateSuccessorList(10)
 	for i := 0; i < 10; i++ {
 		s.successors[i] = CreateNode(Id(i))
 	}
@@ -29,11 +29,11 @@ func TestPopHeadRemovesCorrectNode(t *testing.T) {
 }
 
 func TestAdoptSimple(t *testing.T) {
-	s := SuccessorList{}
+	s := CreateSuccessorList(10)
 	testNode := CreateNode(1)
 	s.SetHead(testNode)
 
-	u := SuccessorList{}
+	u := CreateSuccessorList(10)
 	testNode2 := CreateNode(2)
 	u.SetHead(testNode2)
 
@@ -44,26 +44,26 @@ func TestAdoptSimple(t *testing.T) {
 }
 
 func TestAdoptAdvanced(t *testing.T) {
-	s := SuccessorList{}
-	for i := 0; i < SUCCESSOR_LIST_SIZE; i++ {
+	s := CreateSuccessorList(10)
+	for i := 0; i < 10; i++ {
 		s.successors[i] = CreateNode(Id(i))
 	}
 
-	u := SuccessorList{}
-	for i := 0; i < SUCCESSOR_LIST_SIZE; i++ {
+	u := CreateSuccessorList(10)
+	for i := 0; i < 10; i++ {
 		u.successors[i] = CreateNode(Id(i + 1000))
 	}
 
 	s.Adopt(u)
 
 	assert.Equal(t, Id(0), s.Head().Identifier())
-	for i := 1; i < SUCCESSOR_LIST_SIZE; i++ {
+	for i := 1; i < 10; i++ {
 		assert.Equal(t, Id(i+1000-1), s.successors[i].Identifier())
 	}
 }
 
 func TestUniqueSuccessorsFalse(t *testing.T) {
-	s := SuccessorList{}
+	s := CreateSuccessorList(10)
 	s.successors[0] = CreateNode(0)
 	s.successors[1] = CreateNode(0)
 
@@ -71,9 +71,9 @@ func TestUniqueSuccessorsFalse(t *testing.T) {
 }
 
 func TestUniqueSuccessorsTrue(t *testing.T) {
-	s := SuccessorList{}
+	s := CreateSuccessorList(10)
 
-	for i := 0; i < SUCCESSOR_LIST_SIZE; i++ {
+	for i := 0; i < 10; i++ {
 		s.successors[i] = CreateNode(Id(i))
 	}
 
@@ -81,7 +81,7 @@ func TestUniqueSuccessorsTrue(t *testing.T) {
 }
 
 func TestUniqueSuccessorsEmpty(t *testing.T) {
-	s := SuccessorList{}
+	s := CreateSuccessorList(10)
 	assert.True(t, s.UniqueSuccessors())
 }
 
@@ -104,7 +104,7 @@ func TestOrderedTrue(t *testing.T) {
 	}
 
 	for _, nums := range table {
-		s := SuccessorList{}
+		s := CreateSuccessorList(10)
 		for i, num := range nums {
 			s.successors[i] = CreateNode(num)
 		}
@@ -122,7 +122,7 @@ func TestOrderedFalse(t *testing.T) {
 	}
 
 	for _, nums := range table {
-		s := SuccessorList{}
+		s := CreateSuccessorList(10)
 		for i, num := range nums {
 			s.successors[i] = CreateNode(num)
 		}

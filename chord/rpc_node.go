@@ -133,10 +133,10 @@ func (n *RPCNode) Rectify(p node) error {
 	return nil
 }
 
-func (n *RPCNode) SuccessorList() (SuccessorList, error) {
+func (n *RPCNode) SuccessorList() (*SuccessorList, error) {
 	chord_client, err := n.getConnection()
 	if err != nil {
-		return SuccessorList{}, err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
@@ -144,10 +144,10 @@ func (n *RPCNode) SuccessorList() (SuccessorList, error) {
 
 	succListResponse, err := chord_client.SuccessorList(ctx, &chord_proto.SuccessorListRequest{})
 	if err != nil {
-		return SuccessorList{}, err
+		return nil, err
 	}
 
-	newSuccList := SuccessorList{}
+	newSuccList := CreateSuccessorList(int(succListResponse.NumSuccessors))
 
 	for i := 0; i < int(succListResponse.NumSuccessors); i++ {
 		node := succListResponse.Nodes[i]

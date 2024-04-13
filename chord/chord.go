@@ -14,7 +14,7 @@ type Id int64
 const m = 64
 
 // The stabilization interval in milliseconds
-const STABILIZE_INTERVAL = 1000 * time.Millisecond
+const STABILIZE_INTERVAL = 5000 * time.Millisecond
 const FINGER_INTERVAL = 500 * time.Millisecond
 
 // Abstract interface for a node
@@ -24,7 +24,7 @@ type node interface {
 	Predecessor() (node, error)
 	FindSuccessor(Id) (node, error)
 	Rectify(node) error
-	SuccessorList() (SuccessorList, error)
+	SuccessorList() (*SuccessorList, error)
 	Alive() bool
 	String() string
 }
@@ -38,7 +38,7 @@ type Node struct {
 	muFinger sync.Mutex
 	finger   [m]node
 
-	successorList SuccessorList
+	successorList *SuccessorList
 
 	nextFinger int
 
@@ -46,12 +46,28 @@ type Node struct {
 	wg       *sync.WaitGroup
 }
 
+type ChordConfig struct {
+	// SuccessorListLength is the number of nodes ahead in the ring to store
+	// as potential successors
+	SuccessorListLength int
+
+	// StabilizeInterval is the number of milliseconds between stabilize operations
+	StabilizeInterval int
+
+	// FingerInterval is the number of milliseconds between finger checks
+	FingerInterval int
+
+	// InvariantMonitoring controls whether local invariant checking is run
+	InvariantMonitoring bool
+}
+
 // CreateNode initialises a single-node Chord ring
 func CreateNode(Id Id) *Node {
 	n := &Node{
-		id:       Id,
-		shutdown: make(chan struct{}),
-		wg:       new(sync.WaitGroup),
+		id:            Id,
+		shutdown:      make(chan struct{}),
+		wg:            new(sync.WaitGroup),
+		successorList: CreateSuccessorList(10),
 	}
 
 	n.setSuccessor(n)
@@ -103,11 +119,11 @@ func (n *Node) Start() {
 					promStabilizeRoundsFailed.Inc()
 				}
 				if !n.successorList.UniqueSuccessors() {
-					slog.Warn("duplicate successors", "node", n.Identifier())
+					// slog.Warn("duplicate successors", "node", n.Identifier())
 				}
 
 				if !n.successorList.Ordered() {
-					slog.Warn("disordered successors", "node", n.Identifier())
+					// slog.Warn("disordered successors", "node", n.Identifier())
 				}
 
 				slog.Debug("successor list", "list", n.successorList.String())
@@ -223,7 +239,7 @@ func (n *Node) adoptSuccessorList(p node) error {
 	return nil
 }
 
-func (n *Node) SuccessorList() (SuccessorList, error) {
+func (n *Node) SuccessorList() (*SuccessorList, error) {
 	return n.successorList, nil
 }
 

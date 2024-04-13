@@ -46,7 +46,7 @@ func GetPeer(id Id) (node, error) {
 		return node, nil
 	}
 
-	return nil, fmt.Errorf("peer %v not fonud in directory", id)
+	return nil, fmt.Errorf("peer %v not found in directory", id)
 }
 
 // GetNodeAddress returns an address compatible with net.Dial for a given node,

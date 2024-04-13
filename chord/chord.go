@@ -305,6 +305,7 @@ func (n *Node) FindSuccessor(Id Id) (node, error) {
 		return n, nil
 	}
 
+	promFindSuccessors.Inc()
 	return p.FindSuccessor(Id)
 }
 

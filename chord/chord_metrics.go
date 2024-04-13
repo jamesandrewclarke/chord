@@ -19,3 +19,8 @@ var promRectifies = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "chord_rectifies_total",
 	Help: "Count of successful rectifications",
 })
+
+var promFindSuccessors = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "chord_find_successor_calls_total",
+	Help: "Count of calls to FindSuccessor",
+})

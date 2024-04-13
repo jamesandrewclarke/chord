@@ -5,13 +5,15 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Type alias for Chord IDs
 type Id int64
 
 // m is the size of the Chord ring, i.e. the ring is modulo (1<<m)
-const m = 64
+const m = 10
 
 // The stabilization interval in milliseconds
 const STABILIZE_INTERVAL = 5000 * time.Millisecond
@@ -44,6 +46,12 @@ type Node struct {
 
 	shutdown chan struct{}
 	wg       *sync.WaitGroup
+
+	// Metrics
+	registry         *prometheus.Registry
+	operationCount   *prometheus.CounterVec
+	successorGauge   prometheus.Gauge
+	predecessorGauge prometheus.Gauge
 }
 
 type ChordConfig struct {
@@ -64,15 +72,24 @@ type ChordConfig struct {
 // CreateNode initialises a single-node Chord ring
 func CreateNode(Id Id) *Node {
 	n := &Node{
-		id:            Id,
-		shutdown:      make(chan struct{}),
-		wg:            new(sync.WaitGroup),
-		successorList: CreateSuccessorList(10),
+		id:               Id,
+		shutdown:         make(chan struct{}),
+		wg:               new(sync.WaitGroup),
+		successorList:    CreateSuccessorList(10),
+		operationCount:   prometheus.NewCounterVec(operationsCounter, operationsCounterLabels),
+		successorGauge:   prometheus.NewGauge(successorGauge),
+		predecessorGauge: prometheus.NewGauge(predecessorGauge),
 	}
 
 	n.setSuccessor(n)
 	n.predecessor = n
 	n.nextFinger = 1
+
+	n.registry = prometheus.NewRegistry()
+
+	n.registry.MustRegister(n.operationCount)
+	n.registry.MustRegister(n.successorGauge)
+	n.registry.MustRegister(n.predecessorGauge)
 
 	return n
 }
@@ -112,11 +129,10 @@ func (n *Node) Start() {
 			case <-stabilizeTicker.C:
 				n.checkPredecessor()
 
-				promStabilizeRounds.Inc()
 				err := n.stabilize()
 				if err != nil {
 					slog.Error("failed stabilization", "node", n.Identifier(), "err", err)
-					promStabilizeRoundsFailed.Inc()
+					n.operationCount.WithLabelValues("stabilize", "fail", fmt.Sprint(n.Identifier())).Inc()
 				}
 				if !n.successorList.UniqueSuccessors() {
 					// slog.Warn("duplicate successors", "node", n.Identifier())
@@ -126,6 +142,7 @@ func (n *Node) Start() {
 					// slog.Warn("disordered successors", "node", n.Identifier())
 				}
 
+				n.operationCount.WithLabelValues("stabilize", "success", fmt.Sprint(n.Identifier())).Inc()
 				slog.Debug("successor list", "list", n.successorList.String())
 
 			case <-fingerTicker.C:
@@ -169,6 +186,8 @@ func (n *Node) setSuccessor(p node) {
 	n.muFinger.Lock()
 	defer n.muFinger.Unlock()
 	n.finger[0] = p
+
+	n.successorGauge.Set(float64(n.successorList.Head().Identifier()))
 }
 
 // stabilize updates the successor list and informs the immediate successor of the node's presence
@@ -262,7 +281,8 @@ func (n *Node) Rectify(newPredc node) error {
 		slog.Info("accepted rectify", "remote_node", newPredc)
 		n.predecessor = newPredc
 
-		promRectifies.Inc()
+		n.predecessorGauge.Set(float64(n.predecessor.Identifier()))
+		n.operationCount.WithLabelValues("rectify", "success", fmt.Sprint(n.Identifier())).Inc()
 	}
 
 	return nil
@@ -293,6 +313,7 @@ func (n *Node) fixFingers() {
 func (n *Node) FindSuccessor(Id Id) (node, error) {
 	succ, _ := n.Successor()
 	if succ == nil {
+		n.operationCount.WithLabelValues("findsuccessor", "fail", fmt.Sprint(n.Identifier())).Inc()
 		return nil, fmt.Errorf("could not find a successor as the node's successor is nil")
 	}
 
@@ -305,7 +326,7 @@ func (n *Node) FindSuccessor(Id Id) (node, error) {
 		return n, nil
 	}
 
-	promFindSuccessors.Inc()
+	n.operationCount.WithLabelValues("findsuccessor", "success", fmt.Sprint(n.Identifier())).Inc()
 	return p.FindSuccessor(Id)
 }
 
@@ -344,4 +365,8 @@ func (n *Node) String() string {
 // Alive returns the node's liveness, this is always true for a local node.
 func (n *Node) Alive() bool {
 	return true
+}
+
+func (n *Node) PrometheusRegistry() *prometheus.Registry {
+	return n.registry
 }

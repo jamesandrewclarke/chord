@@ -35,7 +35,7 @@ func main() {
 	}()
 
 	go func() {
-		http.Handle("/metrics", promhttp.Handler())
+		http.Handle("/metrics", promhttp.HandlerFor(node.PrometheusRegistry(), promhttp.HandlerOpts{}))
 		http.ListenAndServe(":2112", nil)
 	}()
 

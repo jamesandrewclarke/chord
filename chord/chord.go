@@ -13,7 +13,7 @@ import (
 type Id int64
 
 // m is the size of the Chord ring, i.e. the ring is modulo (1<<m)
-const m = 10
+const m = 64
 
 // The stabilization interval in milliseconds
 const STABILIZE_INTERVAL = 5000 * time.Millisecond

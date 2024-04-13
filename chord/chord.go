@@ -319,7 +319,7 @@ func (n *Node) String() string {
 		successor = fmt.Sprint(succ.Identifier())
 	}
 
-	return fmt.Sprintf("id = %v, predecessor = %v, successor = %v", n.Identifier(), predecessor, successor)
+	return fmt.Sprintf("Node(id = %v, predecessor = %v, successor = %v)", n.Identifier(), predecessor, successor)
 }
 
 // Alive returns the node's liveness, this is always true for a local node.

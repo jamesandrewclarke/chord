@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -35,7 +36,8 @@ func main() {
 	}()
 
 	go func() {
-		http.Handle("/metrics", promhttp.HandlerFor(node.PrometheusRegistry(), promhttp.HandlerOpts{}))
+		prometheus.Register(node.PrometheusRegistry())
+		http.Handle("/metrics", promhttp.Handler())
 		http.ListenAndServe(":2112", nil)
 	}()
 

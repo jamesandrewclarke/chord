@@ -12,27 +12,31 @@ import (
 
 const TIMEOUT = 10 * time.Second
 
+var connections map[Id]chord_proto.ChordClient
+
+func init() {
+	connections = make(map[Id]chord_proto.ChordClient)
+}
+
 // RPCNode represents a remote node accessed over the network
 type RPCNode struct {
 	Address string
 
 	Id Id
-
-	client chord_proto.ChordClient
 }
 
 func (n *RPCNode) getConnection() (chord_proto.ChordClient, error) {
-	if n.client == nil {
+	if _, ok := connections[n.Id]; !ok {
 		conn, err := grpc.Dial(n.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			fmt.Printf("error getting connection: %v\n", err)
 			return nil, err
 		}
 
-		n.client = chord_proto.NewChordClient(conn)
+		connections[n.Id] = chord_proto.NewChordClient(conn)
 	}
 
-	return n.client, nil
+	return connections[n.Id], nil
 }
 
 func (n *RPCNode) Identifier() Id {

@@ -12,6 +12,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	_ "net/http/pprof"
 )
 
 var EXTERNAL_ADDRESS = flag.String("address", "127.0.0.1", "The address that peers will contact the server on, should be set accordingly for networks behind a NAT")

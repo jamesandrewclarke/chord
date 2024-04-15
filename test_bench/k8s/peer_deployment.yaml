@@ -23,17 +23,20 @@ spec:
       containers:
       - name: chord
         image: chord.azurecr.io/app/peer:ci
-        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)", "-bootstrap=10.244.3.71:8080"]
+        imagePullPolicy: Always
+        command: ["/app", "-port=8080", "-address=$(EXTERNAL_IP)", "-bootstrap=10.244.9.46:8080"]
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "128m"
+            memory: "32Mi"
+            cpu: "8m"
           limits:
-            memory: "512Mi"
-            cpu: "256m"
+            memory: "128Mi"
+            cpu: "128m"
         ports:
         - name: rpc
           containerPort: 8080
+        - name: dht
+          containerPort: 8081
         - name: metrics
           containerPort: 2112
 

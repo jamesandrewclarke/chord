@@ -26,6 +26,7 @@ def get_key(addr: str, key: str) -> bytes:
         if res.forwardNode.address:
             forwardAddr = f"{res.forwardNode.address}:{PORT}"
             #sys.stderr.write(f"forwarding to {res.forwardNode.address}")
-            return get_key(forwardAddr, key)
+            _, value = get_key(forwardAddr, key)
+            return res.pathLength, value
 
-        return res.value
+        return  0, res.value

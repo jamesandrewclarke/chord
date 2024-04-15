@@ -332,7 +332,7 @@ func (n *Node) FindSuccessor(Id Id, pathLength int) (node, int, error) {
 	}
 
 	if Between(Id, n.Identifier(), succ.Identifier()+1) {
-		return succ, pathLength + 1, nil
+		return succ, pathLength, nil
 	}
 
 	p := n.closestPrecedingNode(Id)

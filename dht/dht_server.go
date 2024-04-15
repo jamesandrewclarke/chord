@@ -126,7 +126,8 @@ func (s *Server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_
 
 	if !s.keystore.HasKey(key) {
 		chordKey := ChordIdFromString(key)
-		successor, err := s.node.FindSuccessor(chordKey)
+		successor, pathLength, err := s.node.FindSuccessor(chordKey, 0)
+		fmt.Printf("Path length: %v\n", pathLength)
 		if err != nil {
 			msg := fmt.Sprintf("Our node does not have this key, and we could not find a node to forward to: %v", err)
 			return nil, status.Error(codes.Internal, msg)
@@ -138,6 +139,7 @@ func (s *Server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_
 				ForwardNode: &dht_proto.Node{
 					Address: forwardAddress,
 				},
+				PathLength: int32(pathLength),
 			}, nil
 		}
 
@@ -150,7 +152,8 @@ func (s *Server) GetKey(ctx context.Context, in *dht_proto.GetKeyRequest) (*dht_
 	}
 
 	return &dht_proto.GetKeyResponse{
-		Value: value,
+		Value:      value,
+		PathLength: 0,
 	}, nil
 }
 
@@ -161,7 +164,7 @@ func (s *Server) SetKey(ctx context.Context, in *dht_proto.SetKeyRequest) (*dht_
 	// Check if we are actually the successor for this key
 	chordKey := ChordIdFromString(in.Key)
 	if !in.Transfer {
-		successor, err := s.node.FindSuccessor(chordKey)
+		successor, _, err := s.node.FindSuccessor(chordKey, 0)
 
 		if err != nil {
 			msg := fmt.Sprintf("key setting failed, could not verify the node's ownership of the key: %v", err)

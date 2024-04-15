@@ -7,7 +7,7 @@ package chord_proto;
 service Chord {
     rpc GetPredecessor(PredecessorRequest) returns (Node);
     rpc GetSuccessor(SuccessorRequest) returns (Node);
-    rpc FindSuccessor(FindSuccessorRequest) returns (Node);
+    rpc FindSuccessor(FindSuccessorRequest) returns (FindSuccessorResponse);
     rpc Rectify(Node) returns (RectifyResponse);
     rpc SuccessorList(SuccessorListRequest) returns (SuccessorListResponse);
     rpc Announce(AnnounceRequest) returns (Node);
@@ -34,6 +34,13 @@ message AnnounceRequest {
 
 message FindSuccessorRequest {
     int64 id = 1;
+    // For debugging/experimental purposes, measure the number of hops between lookups
+    int32 pathLength = 2;
+}
+
+message FindSuccessorResponse {
+    Node node = 1;
+    int32 pathLength = 2;
 }
 
 message SuccessorListResponse {

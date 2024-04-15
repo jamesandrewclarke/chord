@@ -58,9 +58,9 @@ func (s *server) GetSuccessor(ctx context.Context, in *chord_proto.SuccessorRequ
 	return serializePeer(node), nil
 }
 
-func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccessorRequest) (*chord_proto.Node, error) {
+func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccessorRequest) (*chord_proto.FindSuccessorResponse, error) {
 	lookupID := in.Id
-	p, err := s.local.FindSuccessor(Id(lookupID))
+	p, pathLength, err := s.local.FindSuccessor(Id(lookupID), int(in.PathLength))
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,10 @@ func (s *server) FindSuccessor(ctx context.Context, in *chord_proto.FindSuccesso
 		return nil, err
 	}
 
-	return serializePeer(node), nil
+	return &chord_proto.FindSuccessorResponse{
+		Node:       serializePeer(node),
+		PathLength: int32(pathLength),
+	}, nil
 }
 
 func (s *server) Rectify(ctx context.Context, in *chord_proto.Node) (*chord_proto.RectifyResponse, error) {

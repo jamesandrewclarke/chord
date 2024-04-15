@@ -13,10 +13,10 @@ import (
 type Id int64
 
 // m is the size of the Chord ring, i.e. the ring is modulo (1<<m)
-const m = 64
+const m = 32
 
 // The stabilization interval in milliseconds
-const STABILIZE_INTERVAL = 5000 * time.Millisecond
+const STABILIZE_INTERVAL = 1000 * time.Millisecond
 const FINGER_INTERVAL = 500 * time.Millisecond
 
 // Abstract interface for a node
@@ -24,7 +24,7 @@ type node interface {
 	Identifier() Id
 	Successor() (node, error)
 	Predecessor() (node, error)
-	FindSuccessor(Id) (node, error)
+	FindSuccessor(Id, int) (node, int, error)
 	Rectify(node) error
 	SuccessorList() (*SuccessorList, error)
 	Alive() bool
@@ -180,7 +180,7 @@ func (n *Node) Stop() {
 func (n *Node) Join(p node) error {
 	n.predecessor = nil
 
-	succ, err := p.FindSuccessor(n.Identifier())
+	succ, _, err := p.FindSuccessor(n.Identifier(), 0)
 	if err != nil {
 		return err
 	}
@@ -309,7 +309,7 @@ func (n *Node) fixFingers() {
 		n.nextFinger = 1
 	}
 
-	succ, err := n.FindSuccessor(n.id + 1<<(n.nextFinger-1))
+	succ, _, err := n.FindSuccessor(n.id+1<<(n.nextFinger-1), 0)
 	if err != nil {
 		slog.Warn("failed finger check", "finger", n.nextFinger, "successor", succ)
 		n.nextFinger++
@@ -324,24 +324,24 @@ func (n *Node) fixFingers() {
 
 // FindSuccessor returns the successor node for a given Id by recursively asking the highest
 // node in our finger table which comes precedes the given Id
-func (n *Node) FindSuccessor(Id Id) (node, error) {
+func (n *Node) FindSuccessor(Id Id, pathLength int) (node, int, error) {
 	succ, _ := n.Successor()
 	if succ == nil {
 		n.operationCount.WithLabelValues("findsuccessor", "fail", fmt.Sprint(n.Identifier())).Inc()
-		return nil, fmt.Errorf("could not find a successor as the node's successor is nil")
+		return nil, pathLength, fmt.Errorf("could not find a successor as the node's successor is nil")
 	}
 
 	if Between(Id, n.Identifier(), succ.Identifier()+1) {
-		return succ, nil
+		return succ, pathLength + 1, nil
 	}
 
 	p := n.closestPrecedingNode(Id)
 	if p == n {
-		return n, nil
+		return n, pathLength, nil
 	}
 
 	n.operationCount.WithLabelValues("findsuccessor", "success", fmt.Sprint(n.Identifier())).Inc()
-	return p.FindSuccessor(Id)
+	return p.FindSuccessor(Id, pathLength+1)
 }
 
 // closestPrecedingNode returns the highest entry in the finger table which precedes Id

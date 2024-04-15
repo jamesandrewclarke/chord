@@ -23,6 +23,8 @@ message GetKeyResponse {
     
     // An alternate node, if the node thinks that the request should be forwarded
     Node forwardNode = 3; 
+    
+    int32 pathLength = 4;
 };
 
 message SetKeyRequest {

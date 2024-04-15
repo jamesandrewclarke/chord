@@ -20,7 +20,7 @@ func TestFindSuccessorSimple(t *testing.T) {
 	a.Join(b)
 
 	for i := a.Identifier() + 1; i <= b.Identifier(); i++ {
-		a_succ, err := a.FindSuccessor(Id(i))
+		a_succ, _, err := a.FindSuccessor(Id(i), 0)
 
 		assert.Nil(t, err)
 		assert.Equal(t, b.Identifier(), a_succ.Identifier())
@@ -35,7 +35,7 @@ func TestFindSuccessorWrapAround(t *testing.T) {
 
 	// Any key >10 should be handled by node b
 	for i := 1; i < 16; i++ {
-		succ, _ := a.FindSuccessor(a.Identifier() + 1)
+		succ, _, _ := a.FindSuccessor(a.Identifier()+1, 0)
 		assert.Equal(t, b.Identifier(), succ.Identifier())
 	}
 }
@@ -50,7 +50,7 @@ func TestFindSuccessorWrapAroundTriple(t *testing.T) {
 
 	// Any key >10 should be handled by node b
 	for i := 1; i < 16; i++ {
-		succ, _ := a.FindSuccessor(a.Identifier() + 1)
+		succ, _, _ := a.FindSuccessor(a.Identifier()+1, 0)
 		assert.Equal(t, b.Identifier(), succ.Identifier())
 	}
 }
@@ -67,17 +67,17 @@ func TestFindSuccessorAdvanced(t *testing.T) {
 
 	// Test every key in the ring and query node A for the correct location
 	for i := a.Identifier() + 1; i <= b.Identifier(); i++ {
-		succ, _ := a.FindSuccessor(i)
+		succ, _, _ := a.FindSuccessor(i, 0)
 		assert.Equal(t, b.Identifier(), succ.Identifier())
 	}
 
 	for i := b.Identifier() + 1; i <= c.Identifier(); i++ {
-		succ, _ := a.FindSuccessor(i)
+		succ, _, _ := a.FindSuccessor(i, 0)
 		assert.Equal(t, c.Identifier(), succ.Identifier())
 	}
 
 	for i := c.Identifier() + 1; i <= d.Identifier(); i++ {
-		succ, _ := a.FindSuccessor(i)
+		succ, _, _ := a.FindSuccessor(i, 0)
 		assert.Equal(t, d.Identifier(), succ.Identifier())
 	}
 
@@ -96,7 +96,7 @@ func TestFindSuccessorReturnsSuccessor(t *testing.T) {
 
 	a.Join(b)
 
-	succ, _ := a.FindSuccessor(b.Identifier())
+	succ, _, _ := a.FindSuccessor(b.Identifier(), 0)
 	assert.Equal(t, b.Identifier(), succ.Identifier())
 }
 
@@ -106,7 +106,7 @@ func TestFindSuccessorReturnsSuccessorPermuted(t *testing.T) {
 
 	a.Join(b)
 
-	succ, _ := a.FindSuccessor(b.Identifier())
+	succ, _, _ := a.FindSuccessor(b.Identifier(), 0)
 	assert.Equal(t, b.Identifier(), succ.Identifier())
 }
 
@@ -118,7 +118,7 @@ func TestFindSuccessorTransitive(t *testing.T) {
 	b.Join(c)
 	a.Join(b)
 
-	succ, _ := a.FindSuccessor(c.Identifier())
+	succ, _, _ := a.FindSuccessor(c.Identifier(), 0)
 	assert.Equal(t, succ.Identifier(), c.Identifier())
 }
 
@@ -131,7 +131,7 @@ func TestFindSuccessorTransitiveWraparound(t *testing.T) {
 	b.Join(c)
 	a.Join(b)
 
-	succ, _ := a.FindSuccessor(c.Identifier())
+	succ, _, _ := a.FindSuccessor(c.Identifier(), 0)
 	assert.Equal(t, succ.Identifier(), c.Identifier())
 }
 
@@ -139,7 +139,7 @@ func TestSingletonNodeFindSuccessorReturnsSelf(t *testing.T) {
 	node := CreateNode(1)
 
 	for i := 1; i < 100; i++ {
-		succ, err := node.FindSuccessor(node.Identifier())
+		succ, _, err := node.FindSuccessor(node.Identifier(), 0)
 
 		assert.Nil(t, err)
 		assert.Equal(t, node.Identifier(), succ.Identifier())

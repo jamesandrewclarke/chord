@@ -89,29 +89,30 @@ func (n *RPCNode) Successor() (node, error) {
 	return newNode, nil
 }
 
-func (n *RPCNode) FindSuccessor(id Id) (node, error) {
+func (n *RPCNode) FindSuccessor(id Id, pathLength int) (node, int, error) {
 	chord_client, err := n.getConnection()
 	if err != nil {
-		return nil, err
+		return nil, pathLength, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 
 	p, err := chord_client.FindSuccessor(ctx, &chord_proto.FindSuccessorRequest{
-		Id: int64(id),
+		Id:         int64(id),
+		PathLength: int32(pathLength),
 	})
 	if err != nil {
-		return nil, err
+		return nil, int(p.PathLength), err
 	}
 
 	newNode := &RPCNode{
-		Id:      Id(p.Identifier),
-		Address: p.Address,
+		Id:      Id(p.Node.Identifier),
+		Address: p.Node.Address,
 	}
 	SavePeer(newNode)
 
-	return newNode, nil
+	return newNode, int(p.PathLength), nil
 }
 
 func (n *RPCNode) Rectify(p node) error {

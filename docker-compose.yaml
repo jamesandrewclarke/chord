@@ -59,6 +59,46 @@ services:
     depends_on:
       - peer5
         
+  peer7:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer7 -bootstrap peer6:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - peer6
+
+  peer8:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer8 -bootstrap peer7:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - peer7
+        
+  peer9:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer9 -bootstrap peer8:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - peer8
+        
+  peer10:
+    image: chord.azurecr.io/app/dht:local_james
+    build: .
+    command: -address peer10 -bootstrap peer9:8080 -port 8080
+    expose:
+      - "8080"
+      - "8081"
+    depends_on:
+      - peer9
+
   # Test container which mounts our Python scripts, allows us to make use of Docker networking
   python:
     image: chord.azurecr.io/app/python:local_james

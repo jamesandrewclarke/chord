@@ -1,2 +1,5 @@
 # Protobuf code-gen
 *.pb.go
+
+# macOS
+.DS_Store

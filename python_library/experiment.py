@@ -7,15 +7,17 @@ import key_lib as dht
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: experiment.py <address> <output_name>") 
+        print("Usage: experiment.py <address> <output_name> <N>") 
         exit(1)
         
     ENTRY_ADDRESS = f"{sys.argv[1]}:{dht.PORT}"
     TEST_NAME = sys.argv[2]
+    N = 1000
+    if len(sys.argv) > 3:
+        N = int(sys.argv[3])
 
     keys = []
     
-    N = 1000
     M = 255
     for i in range(N):
         random_stuff = secrets.token_bytes(M)

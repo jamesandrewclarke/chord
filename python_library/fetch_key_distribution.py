@@ -17,16 +17,21 @@ if __name__ == "__main__":
     data = res.json()
     result = data['data']['result'] 
 
-    key_totals = [int(value['value'][1]) for value in result]
+    
+    key_totals = [
+        [int(value['value'][1]), int(value['metric']['id'])] for value in result
+    ]
 
     n = len(key_totals)
 
     print(f"Got {n} totals")
     arr = np.array(key_totals)
-    print(f"1% = {np.percentile(arr, 1)}")
-    print(f"50% = {np.percentile(arr, 50)}")
-    print(f"99% = {np.percentile(arr, 99)}")
 
-    print(f"Sum = {np.sum(arr)}")
+    keys = arr[:,0]
+    print(f"1% = {np.percentile(keys, 1)}")
+    print(f"50% = {np.percentile(keys, 50)}")
+    print(f"99% = {np.percentile(keys, 99)}")
+
+    print(f"Sum = {np.sum(keys)}")
 
     np.save(f"results/dht_key_totals_{n}", key_totals)

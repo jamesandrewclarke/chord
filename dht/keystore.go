@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type keystore interface {
@@ -25,11 +27,26 @@ type keyentry struct {
 type KeyStore struct {
 	muKeys sync.RWMutex
 	Keys   map[string]*keyentry
+
+	keyGauge prometheus.Gauge
+
+	Registry *prometheus.Registry
 }
 
-func CreateKeyStore() *KeyStore {
-	ks := &KeyStore{}
-	ks.Keys = make(map[string]*keyentry)
+func CreateKeyStore(id chord.Id) *KeyStore {
+	ks := &KeyStore{
+		Keys: make(map[string]*keyentry),
+		keyGauge: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "dht_keys_total",
+			Help: "The total number of keys stored in the node",
+			ConstLabels: prometheus.Labels{
+				"id": fmt.Sprint(id),
+			},
+		}),
+	}
+
+	ks.Registry = prometheus.NewRegistry()
+	ks.Registry.MustRegister(ks.keyGauge)
 
 	return ks
 }
@@ -57,7 +74,7 @@ func (k *KeyStore) SetKey(key string, bytes []byte) error {
 	if k.hasKey(key) {
 		slog.Warn("overwriting log entry", "key", key)
 	} else {
-		promKeysTotal.Inc()
+		k.keyGauge.Inc()
 		k.Keys[key] = createKeyEntry(key)
 	}
 
@@ -105,7 +122,7 @@ func (k *KeyStore) DeleteKey(key string) error {
 	defer entry.Unlock()
 	delete(k.Keys, key)
 
-	promKeysTotal.Dec()
+	k.keyGauge.Dec()
 	promDeleteKeysTotal.Inc()
 	return nil
 }

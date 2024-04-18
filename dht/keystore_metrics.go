@@ -5,11 +5,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-var promKeysTotal = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "dht_keys_total",
-	Help: "The total number of keys stored in the node",
-})
-
 var promSetKeysTotal = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "dht_set_key_calls_total",
 	Help: "Count of SetKey operations",

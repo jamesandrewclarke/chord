@@ -7,7 +7,7 @@ import (
 )
 
 func TestKeyStoreHasKey(t *testing.T) {
-	k := CreateKeyStore()
+	k := CreateKeyStore(0)
 	err := k.SetKey("test", []byte("test"))
 
 	assert.Nil(t, err, "expected nil err")
@@ -16,7 +16,7 @@ func TestKeyStoreHasKey(t *testing.T) {
 }
 
 func TestKeyStoreReturnsCorrectKey(t *testing.T) {
-	k := CreateKeyStore()
+	k := CreateKeyStore(0)
 
 	err := k.SetKey("test", []byte("Hello, World!"))
 

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -30,11 +31,12 @@ func StartDHT(node *chord.Node, port int) *Server {
 
 	dht := &Server{
 		node:     node,
-		keystore: CreateKeyStore(),
+		keystore: CreateKeyStore(node.Identifier()),
 		shutdown: make(chan struct{}),
 		wg:       new(sync.WaitGroup),
 	}
 
+	prometheus.MustRegister(dht.keystore.Registry)
 	dht_proto.RegisterDHTServer(s, dht)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%v", port))
@@ -45,7 +47,7 @@ func StartDHT(node *chord.Node, port int) *Server {
 	dht.wg.Add(1)
 	go func() {
 		defer dht.wg.Done()
-		// TODO graceful shutdown for this
+
 		keyCheckTicker := time.NewTicker(3 * time.Second)
 		defer keyCheckTicker.Stop()
 

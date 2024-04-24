@@ -13,13 +13,13 @@ import (
 )
 
 type server struct {
-	local *Node
+	local *LocalNode
 	chord_proto.UnimplementedChordServer
 }
 
 var externalAddress string
 
-func StartServer(node *Node, lis net.Listener) {
+func StartServer(node *LocalNode, lis net.Listener) {
 	s := grpc.NewServer()
 	chord_proto.RegisterChordServer(s, &server{local: node})
 
@@ -158,7 +158,7 @@ func serializePeer(node node) *chord_proto.Node {
 	}
 
 	switch v := node.(type) {
-	case *Node:
+	case *LocalNode:
 		res.Address = externalAddress
 
 	case *RPCNode:

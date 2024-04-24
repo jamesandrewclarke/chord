@@ -31,7 +31,7 @@ type node interface {
 	String() string
 }
 
-type Node struct {
+type LocalNode struct {
 	id Id
 
 	muPred      sync.Mutex
@@ -70,8 +70,8 @@ type ChordConfig struct {
 }
 
 // CreateNode initialises a single-node Chord ring
-func CreateNode(Id Id) *Node {
-	n := &Node{
+func CreateNode(Id Id) *LocalNode {
+	n := &LocalNode{
 		id:            Id,
 		shutdown:      make(chan struct{}),
 		wg:            new(sync.WaitGroup),
@@ -109,12 +109,12 @@ func CreateNode(Id Id) *Node {
 }
 
 // Identifier returns the m-bit identifier which determines the node's location on the ring
-func (n *Node) Identifier() Id {
+func (n *LocalNode) Identifier() Id {
 	return n.id
 }
 
 // Predecessor returns a pointer to n's predecessor
-func (n *Node) Predecessor() (node, error) {
+func (n *LocalNode) Predecessor() (node, error) {
 	if n.predecessor == nil {
 		return nil, fmt.Errorf("no known predecessor")
 	}
@@ -122,12 +122,12 @@ func (n *Node) Predecessor() (node, error) {
 }
 
 // Successor returns a pointer to n's successor
-func (n *Node) Successor() (node, error) {
+func (n *LocalNode) Successor() (node, error) {
 	return n.successorList.Head(), nil
 }
 
 // Start starts the background tasks to stabilize n's pointers and lookup table
-func (n *Node) Start() {
+func (n *LocalNode) Start() {
 	n.wg.Add(1)
 	go func() {
 		stabilizeTicker := time.NewTicker(STABILIZE_INTERVAL)
@@ -169,7 +169,7 @@ func (n *Node) Start() {
 	}()
 }
 
-func (n *Node) Stop() {
+func (n *LocalNode) Stop() {
 	close(n.shutdown)
 	slog.Info("graceful shutdown")
 	n.wg.Wait()
@@ -177,7 +177,7 @@ func (n *Node) Stop() {
 }
 
 // Join joins a Chord ring containing the node p
-func (n *Node) Join(p node) error {
+func (n *LocalNode) Join(p node) error {
 	n.predecessor = nil
 
 	succ, _, err := p.FindSuccessor(n.Identifier(), 0)
@@ -190,7 +190,7 @@ func (n *Node) Join(p node) error {
 }
 
 // setSuccessor is a safe wrapper method for setting n's immediate successor
-func (n *Node) setSuccessor(p node) {
+func (n *LocalNode) setSuccessor(p node) {
 	if p == nil {
 		return
 	}
@@ -205,7 +205,7 @@ func (n *Node) setSuccessor(p node) {
 }
 
 // stabilize updates the successor list and informs the immediate successor of the node's presence
-func (n *Node) stabilize() error {
+func (n *LocalNode) stabilize() error {
 	defer func() {
 		succ, _ := n.Successor()
 		if succ != nil {
@@ -257,7 +257,7 @@ func (n *Node) stabilize() error {
 
 // adoptSuccessorList retains the current head of the successor list and copies all but the last entry of p on top
 // Not thread safe
-func (n *Node) adoptSuccessorList(p node) error {
+func (n *LocalNode) adoptSuccessorList(p node) error {
 	if n.Identifier() == p.Identifier() {
 		return nil
 	}
@@ -272,12 +272,12 @@ func (n *Node) adoptSuccessorList(p node) error {
 	return nil
 }
 
-func (n *Node) SuccessorList() (*SuccessorList, error) {
+func (n *LocalNode) SuccessorList() (*SuccessorList, error) {
 	return n.successorList, nil
 }
 
 // checkPredecessor verifies that the current predecesor is alive. If not, the predecessor is reset.
-func (n *Node) checkPredecessor() {
+func (n *LocalNode) checkPredecessor() {
 	n.muPred.Lock()
 	defer n.muPred.Unlock()
 	if n.predecessor != nil && !n.predecessor.Alive() {
@@ -286,7 +286,7 @@ func (n *Node) checkPredecessor() {
 	}
 }
 
-func (n *Node) Rectify(newPredc node) error {
+func (n *LocalNode) Rectify(newPredc node) error {
 	n.muPred.Lock()
 	defer n.muPred.Unlock()
 
@@ -304,7 +304,7 @@ func (n *Node) Rectify(newPredc node) error {
 
 // fixFingers updates the finger table, it is expected to be called repeatedly and updates
 // one finger at a time
-func (n *Node) fixFingers() {
+func (n *LocalNode) fixFingers() {
 	if n.nextFinger >= m {
 		n.nextFinger = 1
 	}
@@ -324,7 +324,7 @@ func (n *Node) fixFingers() {
 
 // FindSuccessor returns the successor node for a given Id by recursively asking the highest
 // node in our finger table which comes precedes the given Id
-func (n *Node) FindSuccessor(Id Id, pathLength int) (node, int, error) {
+func (n *LocalNode) FindSuccessor(Id Id, pathLength int) (node, int, error) {
 	succ, _ := n.Successor()
 	if succ == nil {
 		n.operationCount.WithLabelValues("findsuccessor", "fail", fmt.Sprint(n.Identifier())).Inc()
@@ -345,7 +345,7 @@ func (n *Node) FindSuccessor(Id Id, pathLength int) (node, int, error) {
 }
 
 // closestPrecedingNode returns the highest entry in the finger table which precedes Id
-func (n *Node) closestPrecedingNode(Id Id) node {
+func (n *LocalNode) closestPrecedingNode(Id Id) node {
 	n.muFinger.Lock()
 	defer n.muFinger.Unlock()
 
@@ -359,7 +359,7 @@ func (n *Node) closestPrecedingNode(Id Id) node {
 }
 
 // String returns a basic string representation of the node for debugging purposes
-func (n *Node) String() string {
+func (n *LocalNode) String() string {
 	var predecessor string = "?"
 	var successor string = "?"
 
@@ -377,10 +377,10 @@ func (n *Node) String() string {
 }
 
 // Alive returns the node's liveness, this is always true for a local node.
-func (n *Node) Alive() bool {
+func (n *LocalNode) Alive() bool {
 	return true
 }
 
-func (n *Node) PrometheusRegistry() *prometheus.Registry {
+func (n *LocalNode) PrometheusRegistry() *prometheus.Registry {
 	return n.registry
 }

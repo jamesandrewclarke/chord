@@ -23,14 +23,14 @@ type BootstrapConfig struct {
 	BootstrapAddr string
 }
 
-func Bootstrap(config BootstrapConfig) *Node {
+func Bootstrap(config BootstrapConfig) *LocalNode {
 	lis := getListener(config.Port)
 	port := lis.Addr().(*net.TCPAddr).Port
 
 	addr := fmt.Sprintf("%v:%v", config.ExternalAddr, port)
 	SetExternalAddress(addr)
 
-	var node *Node
+	var node *LocalNode
 	if config.BootstrapAddr != "" {
 		lead_id := IdentifierFromAddress(config.BootstrapAddr)
 		remote := &RPCNode{

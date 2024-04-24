@@ -17,7 +17,7 @@ import (
 )
 
 type Server struct {
-	node *chord.Node
+	node *chord.LocalNode
 
 	shutdown chan struct{}
 	wg       *sync.WaitGroup
@@ -26,7 +26,7 @@ type Server struct {
 	dht_proto.UnimplementedDHTServer
 }
 
-func StartDHT(node *chord.Node, port int) *Server {
+func StartDHT(node *chord.LocalNode, port int) *Server {
 	s := grpc.NewServer()
 
 	dht := &Server{

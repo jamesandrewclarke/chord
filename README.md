@@ -1,10 +1,11 @@
 # Chord
 An implementation of the Chord protocol (Stoica et al.) using Go and gRPC, along with an example application for storing key-value pairs in memory.
 
-- `chord` is the core package containing the Chord logic
-- `dht` is the example application which consumes `chord` and exposes a basic service for storing arbitrary bytes in key-value pairs
-- `protos` contains the protobuf definitions for both `chord` and `dht`, these can be generated using `make`.
-- `test_bench` contains the scripts and configuration files for evaluating the application.
+- [chord](chord) is the core package containing the Chord logic
+- [dht](dht) is the example application which consumes `chord` and exposes a basic service for storing arbitrary bytes in key-value pairs. This is better named as `storage` but the old name has stuck for compatibility.
+- [protos](protos) contains the protobuf definitions for both `chord` and `dht`. The process to generate the Go stubs is in `Makefile`.
+- [python_library](python_library) contains the test scripts, data from experiments and notebooks for generating visualisations.
+- [test_bench](test_bench) contains miscellaneous scripts and configuration files for setting up the environment on Azure.
 
 ## Installation
 
@@ -37,7 +38,7 @@ When stopping a process with a SIGTERM (CTRL+C), the node will transfer the keys
 
 
 ## External Addresses
-If you want the node to be contacted on an address other than `127.0.0.1`, the application must be informed by setting the `-address` flag. This is important as the node's Chord identifier is based on this.
+For the node to be reached on an address other than `127.0.0.1`, the application must be informed by setting the `-address` flag. This step is important as the node's Chord identifier will be based on it.
 
 For example:
 `chord_dht -address 10.24.0.1`
@@ -69,3 +70,10 @@ You can change the number of replicas to your liking. Each peer pod requests 32M
 ### Instrumentation
 
 The `chord_dht` program exports some Prometheus metrics on `:2112`, apply the `pod_monitor.yaml` to tell Prometheus to collect them. See `scripts/setup_kube_prometheus.sh` to set up a Prometheus and Grafana installation.
+
+
+## References
+
+- Stoica, I., Morris, R., Liben-Nowell, D., Karger, D.R., Kaashoek, M.F., Dabek, F. and Balakrishnan, H., 2003. Chord: a scalable peer-to-peer lookup protocol for internet applications. IEEE/ACM Transactions on networking, 11(1), pp.17-32.
+
+- Zave, P., 2017. Reasoning about identifier spaces: How to make chord correct. IEEE Transactions on Software Engineering, 43(12), pp.1144-1156.

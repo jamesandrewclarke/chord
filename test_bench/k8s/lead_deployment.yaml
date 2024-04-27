@@ -30,7 +30,7 @@ spec:
             memory: "512Mi"
             cpu: "500m"
           requests:
-            memory: "128Mi"
+            memory: "512Mi"
             cpu: "250m"
         ports:
         - name: rpc

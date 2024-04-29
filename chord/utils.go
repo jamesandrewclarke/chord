@@ -93,7 +93,7 @@ func IdentifierFromBytes(bytes []byte) Id {
 
 	bigid := new(big.Int)
 
-	bigid.Mod(bigint, big.NewInt(1<<(m-1)-1))
+	bigid.Mod(bigint, big.NewInt(1<<m))
 	// bigid.Mod(bigint, big.NewInt(1<<11))
 
 	return Id(bigid.Int64())

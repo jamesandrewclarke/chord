@@ -12,8 +12,7 @@ def main():
 
     try:
         pl, b = dht.get_key(ENTRY_ADDRESS, key)
-        print(pl, file=sys.stderr, flush=True)
-        # sys.stdout.buffer.write(b)
+        sys.stdout.buffer.write(b)
     except Exception as e:
         sys.stderr.write(f"Error getting key: {e}")
         sys.exit(1)
